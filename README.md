@@ -77,6 +77,20 @@ node tools/ko-check.js                 # does the AI take obvious last-Pokémon 
 - Every team, the Elite Four lineup and each battle's random seed are derived from the date, so everyone gets the same content.
 - Your progress is saved as a log of your choices in `localStorage` and replayed on load. You can close the tab mid-battle and pick up where you left off.
 
+## Teams, levels and Tera Blast
+
+**Your team** comes from Pokémon Showdown's Random Battle generator for the opponent's generation: Gen 4 for Cynthia, Gen 6 for Zinnia and Gen 9 for the Elite Four. The sets are Showdown's, unchanged except for the Tera rule below.
+
+- **Moves, items, abilities and natures** are Showdown's curated sets for each Pokémon and role.
+- **Levels** are Showdown's balance levels, roughly 65–100. Strong Pokémon get lower levels and weak ones higher, so every team is about equally strong. We keep these levels rather than raising everything to 100, because flattening them would make some days much luckier than others.
+- **EVs** are 85 in every stat and IVs are 31. That's Showdown's Random Battle convention, not a hand-tuned spread.
+
+**Tera Blast is removed.** Terastallization is off in every mode, so Showdown's Gen 9 sets built around Tera Blast don't work. All 37 of them belong to one role, "Tera Blast user". We drop that role before generating teams, and the generator picks one of that Pokémon's other Showdown sets instead. Every affected Pokémon has at least one other set, so nothing is lost. This applies to your Gen 9 team and to the Elite Four's teams. The code is `generator()` in `src/core.js`.
+
+**Opponents:**
+- **Cynthia and Zinnia** use their in-game teams with hand-written competitive sets: 252/252 EV spreads and fitting natures and items.
+- **Elite Four members** use Showdown Gen 9 sets of their type, plus their signature ace.
+
 ## Credits
 
 - Battle engine: [@pkmn/sim](https://github.com/pkmn/ps), from the [Pokémon Showdown](https://github.com/smogon/pokemon-showdown) simulator (MIT).

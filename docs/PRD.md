@@ -48,14 +48,15 @@ Where Champion Daily differs:
 - The player's team is generated independently for each mode: Cynthia uses Gen 4 sets, Zinnia Gen 6 and the Elite Four Gen 9.
 - Battles are deterministic, given the seed and the choices made. A run is stored as a log of choices and replayed on load, so a player can close the tab mid-battle and resume exactly where they left off.
 - Day number: 2026-10-14 is Day 1.
-- There is one difficulty only. All Pokémon on both sides are Lv100.
+- There is one difficulty only. The player's Pokémon keep Showdown's Random Battle balance levels (roughly 65–100). Opponent levels are under discussion; they are currently Lv100.
+- Terastallization is off in every mode. Gen 9 "Tera Blast user" sets are skipped, and the generator uses that Pokémon's other Showdown sets.
 
 ## 5. Modes
 
 ### 5.1 Cynthia (Gen 4)
 
 - Rules are Gen 4 (Diamond/Pearl/Platinum) via the Showdown engine: the physical/special split, Gen 4 items and abilities, and no Fairy type.
-- Player team: 6 sets from Showdown's Gen 4 Random Battle pool, raised to Lv100. The player picks a lead before the battle.
+- Player team: 6 sets from Showdown's Gen 4 Random Battle pool, at Showdown's levels. The player picks a lead before the battle.
 - Cynthia's team is fixed to her Platinum team, in game order: Spiritomb (lead), Roserade, Togekiss, Lucario, Milotic, Garchomp (ace).
 - Every Pokémon holds a relevant item:
   - Spiritomb: Leftovers
@@ -70,7 +71,7 @@ Where Champion Daily differs:
 ### 5.2 Zinnia (Gen 6)
 
 - Rules are Gen 6 (ORAS): Fairy type, the Gen 6 type chart and Mega Evolution.
-- Player team: 6 sets from Showdown's Gen 6 Random Battle pool at Lv100. The sets may include Mega Stones. When one is held, a Mega Evolution toggle appears in the Fight menu, once per battle.
+- Player team: 6 sets from Showdown's Gen 6 Random Battle pool, at Showdown's levels. The sets may include Mega Stones. When one is held, a Mega Evolution toggle appears in the Fight menu, once per battle.
 - Zinnia's team is fixed to her Sky Pillar team, in game order: Goodra (lead), Tyrantrum, Altaria, Noivern, Salamence (ace). Her ace holds Salamencite and Mega Evolves.
   - She has 5 Pokémon, matching the game. Her Whismur, Aster, travels with her but never battles.
   - Items: Goodra Assault Vest, Tyrantrum Choice Band, Altaria Leftovers, Noivern Choice Specs, Salamence Salamencite.
@@ -253,7 +254,7 @@ Poppy · Olivia · Lacey · Lucian
 
 - **No official assets in the shipped build.** Official sprites, music and trainer art belong to Nintendo, Creatures and GAME FREAK. Daily Red Game uses sprites from the PokeAPI repository, but those carry no license for the art itself. Champion Daily uses original glyphs, original music and a user-supplied audio library instead.
 - **Fixed champion teams:** Cynthia and Zinnia use their real in-game teams every day. This is faithful, but the teams are public and the same every day, so players can plan counters. The Elite Four's daily variety offsets this.
-- **One difficulty:** Lv100 for everyone. Easy and Hard were removed.
+- **One difficulty:** Easy and Hard were removed. Player teams use Showdown's balance levels rather than a flat Lv100, so each day's team is about equally strong.
 
 ## 11. Roadmap
 

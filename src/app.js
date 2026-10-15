@@ -256,7 +256,7 @@
     return `<button class="mon${opts.lead ? ' is-lead' : ''}" data-i="${i}" ${opts.static ? 'disabled' : ''} aria-pressed="${!!opts.lead}">
       <div class="mon-g">${glyph(set.species, 64)}</div>
       <div class="mon-b">
-        <div class="mon-top"><span class="mon-name">${esc(sp.name)}</span><span class="mon-lv">Lv${opts.level || 100}</span>${opts.lead ? '<span class="lead-tag">LEAD</span>' : ''}${opts.ace ? '<span class="lead-tag ace">ACE</span>' : ''}</div>
+        <div class="mon-top"><span class="mon-name">${esc(sp.name)}</span><span class="mon-lv">Lv${opts.level || set.level || 100}</span>${opts.lead ? '<span class="lead-tag">LEAD</span>' : ''}${opts.ace ? '<span class="lead-tag ace">ACE</span>' : ''}</div>
         <div class="mon-types">${sp.types.map(typeChip).join('')}</div>
         <div class="mon-meta">${esc(itemName(D.toID(set.item)))} · ${esc(abilName(D.toID(set.ability)))}${set.nature ? ' · ' + set.nature : ''}</div>
         <ul class="mon-moves">${set.moves.map((m) => { const mv = D.moves.get(m); return `<li style="--tc:${TYPE_COLOR[mv.type]}">${esc(mv.name)}</li>`; }).join('')}</ul>

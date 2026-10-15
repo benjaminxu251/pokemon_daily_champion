@@ -56,10 +56,24 @@
   }
 
   // the player's team: independent per opponent and per day
+  // Random Battle generator with our rule changes applied. Terastallization is off in every mode,
+  // so Gen 9 sets built around Tera Blast are dropped; the generator then uses that Pokémon's other sets.
+  function generator(format) {
+    const g = TeamGenerators.getTeamGenerator(format);
+    if (format === 'gen9randombattle' && !g.randomSets.__noTera) {
+      for (const d of Object.values(g.randomSets)) {
+        if (d.sets) d.sets = d.sets.filter((s) => s.role !== 'Tera Blast user');
+      }
+      Object.defineProperty(g.randomSets, '__noTera', {value: true});
+    }
+    return g;
+  }
+
+  // the player's team: Showdown's Random Battle sets at Showdown's own balance levels
   function playerTeam(seedStr, opp = OPP.cynthia) {
-    const g = TeamGenerators.getTeamGenerator(opp.randFormat);
+    const g = generator(opp.randFormat);
     g.setSeed(hashSeed('team|' + opp.id + '|' + seedStr));
-    return g.getTeam().map((s) => Object.assign({}, s, {level: 100}));
+    return g.getTeam();
   }
   // the opponent's team: her team from her original game, same lead and ace every day
   function oppTeam(seedStr, opp = OPP.cynthia) {
@@ -75,7 +89,7 @@
       formatid: opp.format,
       seed: hashSeed('battle|' + opp.id + '|' + seedStr),
       p1: {name: 'You', team: t},
-      p2: {name: opp.name, team: ft.map((m) => { const c = Object.assign({}, m, {level}); delete c.ace; return c; })},
+      p2: {name: opp.name, team: ft.map((m) => { const c = Object.assign({}, m, level == null ? {} : {level}); delete c.ace; return c; })},
     });
     // Gen 5+ formats open with team preview; the lead is already set by team order
     if (b.p1.activeRequest && b.p1.activeRequest.teamPreview) { b.choose('p1', 'default'); b.choose('p2', 'default'); }
@@ -374,5 +388,5 @@
     return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(2026, 9, 14)) / 864e5) + 1;
   }
 
-  window.Core = {statOf, OPP, dexFor, oppTeam, aiChoice, estDamage, dex, CYNTHIA, playerTeam, newBattle, act, replay, needs, toEvents, dateKey, dayNumber, effMult};
+  window.Core = {generator, statOf, OPP, dexFor, oppTeam, aiChoice, estDamage, dex, CYNTHIA, playerTeam, newBattle, act, replay, needs, toEvents, dateKey, dayNumber, effMult};
 })();

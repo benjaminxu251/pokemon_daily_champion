@@ -92,7 +92,7 @@
   }
   // the member's team: five Gen 9 random-battle Pokémon of their type, then their ace
   function team(day, m) {
-    const g = TeamGenerators.getTeamGenerator('gen9randombattle');
+    const g = Core.generator('gen9randombattle');
     g.setSeed(seedWords('e4team|' + day + '|' + m.id));
     const aceBase = dex9.species.get(m.ace).baseSpecies;
     const pool = Object.keys(g.randomSets).filter((id) => {
