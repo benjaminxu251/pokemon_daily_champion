@@ -429,13 +429,16 @@
     } else {
       Music.play(battleSlot(OPP), true);
       $('#touch').innerHTML = '';
+      const accent = OPP.member ? TYPE_COLOR[OPP.member.type] : {cynthia: '#c9a24e', zinnia: '#3fb8b0'}[OPP.id];
+      await window.Intro.play($('#scene'), {skin: skinFor(OPP), opp: oppArt(OPP, 160) || '<div class="in-sil"></div>', player: protagArt(OPP, 'front', 160),
+        name: OPP.name, role: OPP.title.replace(OPP.name, '').trim(), playerName: protagFor(OPP), accent});
       const intro = [$('#mon-p1'), $('#mon-p2')];
       intro[0].innerHTML = protagArt(OPP, 'back', 130);
       intro[1].innerHTML = oppArt(OPP, 130);
-      intro.forEach((el) => el.classList.add('enter'));
+      intro.forEach((el) => el.classList.add('intro-in'));
       await typeText(`${protagFor(OPP)} is challenged by ${OPP.title}!`);
       await wait(400);
-      intro.forEach((el) => { el.classList.remove('enter'); el.classList.add('leave'); });
+      intro.forEach((el) => { el.classList.remove('intro-in'); el.classList.add('leave'); });
       await wait(350);
       intro.forEach((el) => { el.classList.remove('leave'); el.innerHTML = ''; });
       await runEvents(evs);
@@ -447,7 +450,7 @@
   function applyUpdate(u, instant) {
     const d = u.side && G.disp[u.side];
     switch (u.kind) {
-      case 'switch': Object.assign(d, {name: u.name, species: u.species, level: u.level, hp: u.hp, max: u.max, status: u.status === 'fnt' ? '' : u.status, fainted: false}); renderActives(instant, u.side); break;
+      case 'switch': Object.assign(d, {name: u.name, species: u.species, level: u.level, hp: u.hp, max: u.max, status: u.status === 'fnt' ? '' : u.status, fainted: false}); renderActives(instant, u.side); if (G.snap) { G.snap[u.side] = null; renderChips(); } break;
       case 'forme': d.species = u.species; renderActives(true, u.side); if (!instant) flash(u.side); break;
       case 'hp': {
         const before = d.hp;
@@ -501,15 +504,116 @@
     const step = (t) => { const k = Math.min(1, (t - t0) / dur); el.textContent = `${Math.round(from + (to - from) * k)}/${max}`; if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
   }
+  // Party bar Poké Ball, game style: red top, black band, white button. State is a class on the wrapper.
+  const BALL = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" class="b-low"/><path d="M1,8 A7,7 0 0 1 15,8 Z" class="b-top"/>' +
+    '<path d="M1,8 H15" class="b-band"/><circle cx="8" cy="8" r="2.4" class="b-btn"/><circle cx="8" cy="8" r="7" class="b-rim"/></svg>';
   function renderPartyBalls() {
     for (const side of ['p1', 'p2']) {
       const mons = G.b[side].pokemon.slice().sort((a, b) => a.position - b.position);
-      $(`#balls-${side}`).innerHTML = mons.map((p) => `<i class="ball ${p.fainted ? 'out' : p.status ? 'st' : ''}"></i>`).join('');
+      const state = (p) => p.fainted ? 'out' : p.status ? 'st' : 'ok';
+      const balls = mons.map((p) => `<i class="ball ${state(p)}" data-tip="${side}:${G.b[side].pokemon.indexOf(p)}" title="${esc(p.species.name)}${p.fainted ? ' (fainted)' : ''}">${BALL}</i>`);
+      while (balls.length < 6) balls.push(`<i class="ball none">${BALL}</i>`);
+      $(`#balls-${side}`).innerHTML = balls.join('');
     }
   }
   function flash(side) { const el = $(`#mon-${side}`); el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit'); }
   function lunge(side) { const el = $(`#mon-${side}`); el.classList.remove('lunge'); void el.offsetWidth; el.classList.add('lunge'); Music.blip(side === 'p1' ? 520 : 390); }
   function faintAnim(side, instant) { $(`#mon-${side}`).classList.add('fainted'); if (!instant) Music.blip(180); }
+
+  // ---------- HUD effect chips (Showdown-style): stat stages, volatiles, side conditions ----------
+  // Read from the engine only when a turn's events have finished playing, so they never run ahead of the text.
+  const stageMult = (n) => n >= 0 ? (2 + n) / 2 : 2 / (2 - n);
+  const VOLATILE = {confusion: 'Confused', substitute: 'Substitute', leechseed: 'Leech Seed', taunt: 'Taunt', encore: 'Encore', torment: 'Torment',
+    yawn: 'Drowsy', perishsong: 'Perish', focusenergy: 'Focus Energy', aquaring: 'Aqua Ring', ingrain: 'Ingrain', curse: 'Cursed', nightmare: 'Nightmare',
+    attract: 'Attracted', destinybond: 'Destiny Bond', magnetrise: 'Magnet Rise', healblock: 'Heal Block', embargo: 'Embargo', disable: 'Disabled',
+    partiallytrapped: 'Trapped', trapped: 'Trapped', mustrecharge: 'Recharging', lockedmove: 'Locked in', choicelock: 'Choice locked', stockpile: 'Stockpile',
+    charge: 'Charged', flashfire: 'Flash Fire', slowstart: 'Slow Start', smackdown: 'Grounded', saltcure: 'Salt Cure', protosynthesis: 'Protosynthesis', quarkdrive: 'Quark Drive'};
+  const SIDE = {stealthrock: 'Stealth Rock', spikes: 'Spikes', toxicspikes: 'Toxic Spikes', stickyweb: 'Sticky Web', reflect: 'Reflect', lightscreen: 'Light Screen',
+    auroraveil: 'Aurora Veil', tailwind: 'Tailwind', safeguard: 'Safeguard', mist: 'Mist', luckychant: 'Lucky Chant'};
+  function snapshot() {
+    G.snap = {};
+    for (const side of ['p1', 'p2']) {
+      const a = G.b[side].active[0];
+      const sc = G.b[side].sideConditions;
+      const sideCh = Object.keys(sc).filter((k) => SIDE[k]).map((k) => SIDE[k] + (sc[k].layers > 1 ? ' ×' + sc[k].layers : ''));
+      G.snap[side] = a && !a.fainted ? {name: a.name, boosts: Object.assign({}, a.boosts), vol: Object.keys(a.volatiles).filter((k) => VOLATILE[k])
+        .map((k) => VOLATILE[k] + (k === 'perishsong' ? ' ' + a.volatiles[k].duration : k === 'stockpile' ? ' ' + a.volatiles[k].layers : '')), sideCh} : {name: null, boosts: {}, vol: [], sideCh};
+    }
+    renderChips();
+  }
+  function renderChips() {
+    for (const side of ['p1', 'p2']) {
+      const el = $(`#box-${side} .bx-chips`), s = G.snap && G.snap[side];
+      if (!el) continue;
+      if (!s) { el.innerHTML = ''; continue; }
+      const boosts = Object.entries(s.boosts).filter(([, n]) => n).map(([k, n]) => `<i class="chip ${n > 0 ? 'up' : 'down'}">${BOOST_NAME[k]} ${n > 0 ? '+' : ''}${n}</i>`);
+      el.innerHTML = boosts.concat(s.vol.map((v) => `<i class="chip vol">${v}</i>`), s.sideCh.map((v) => `<i class="chip side">${v}</i>`)).join('');
+    }
+  }
+
+  // ---------- hover info (Showdown-style tooltip); long-press on touch ----------
+  const BOOST_NAME = {atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe', accuracy: 'Acc', evasion: 'Eva'};
+  function tipMon(ref) {
+    const [side, k] = ref.split(':');
+    const mons = G.b[side].pokemon;
+    // The active slot follows the screen, which can lag the engine during animations.
+    if (k === 'a') return mons.find((p) => p.name === G.disp[side].name) || G.b[side].active[0];
+    return mons[+k];
+  }
+  function tipHTML(ref) {
+    const side = ref.split(':')[0], p = tipMon(ref);
+    if (!p) return '';
+    const shown = ref.endsWith(':a') && G.disp[side].name === p.name;
+    const hp = shown ? G.disp[side].hp : p.hp, max = p.maxhp;
+    const pct = p.fainted ? 0 : Math.max(hp > 0 ? 1 : 0, Math.round(100 * hp / max));
+    const st = p.storedStats, snap = G.snap && G.snap[side];
+    const boosts = shown && snap && snap.name === p.name ? snap.boosts : {};
+    const cls = (n) => n > 0 ? 'up-t' : 'down-t';
+    const bst = (k) => boosts[k] ? `<em class="${cls(boosts[k])}">${boosts[k] > 0 ? '+' : ''}${boosts[k]}</em>` : '';
+    const stat = (k) => `<span>${BOOST_NAME[k]} <b${boosts[k] ? ` class="${cls(boosts[k])}"` : ''}>${Math.floor(st[k] * stageMult(boosts[k] || 0))}</b>${bst(k)}</span>`;
+    const extra = ['accuracy', 'evasion'].filter((k) => boosts[k]).map((k) => `<span>${BOOST_NAME[k]} ${bst(k)}</span>`).join('');
+    return `<div class="tip-h"><b>${esc(p.species.name)}</b> <span class="mon-lv">Lv${p.level}</span> ${p.getTypes().map(typeChip).join('')}</div>
+      <div class="tip-hp"><span class="hp-track"><i class="hp-fill" style="width:${pct}%" data-lvl="${pct > 50 ? 'g' : pct > 20 ? 'y' : 'r'}"></i></span>
+        <b>${p.fainted ? 'Fainted' : pct + '%'}</b>${side === 'p1' && !p.fainted ? ` <small>${hp}/${max}</small>` : ''}${p.status && !p.fainted ? ` <span class="tip-st">${p.status.toUpperCase()}</span>` : ''}</div>
+      <div class="tip-meta">Item: <b>${esc(itemName(p.item))}</b> · Ability: <b>${esc(abilName(p.ability))}</b></div>
+      <div class="tip-stats">${['atk', 'def', 'spa', 'spd', 'spe'].map(stat).join('')}${extra}</div>
+      <ul class="tip-moves">${p.moveSlots.map((m) => `<li style="--tc:${TYPE_COLOR[D.moves.get(m.id).type]}">${esc(m.move)}<small>${m.pp}/${m.maxpp}</small></li>`).join('')}</ul>`;
+  }
+  let tipLive = null;
+  function showTip(el) {
+    if (!G || !G.b || document.body.dataset.view !== 'battle') return;
+    const html = tipHTML(el.dataset.tip);
+    const tip = $('#tip');
+    if (!html) { tip.hidden = true; return; }
+    tip.innerHTML = html; tip.hidden = false;
+    // Keep it live while open: HP drains, boosts and PP change as the turn plays out.
+    clearInterval(tipLive);
+    tipLive = setInterval(() => { if (tip.hidden || !G || !G.b) return clearInterval(tipLive); const h = tipHTML(el.dataset.tip); if (h && h !== tip.innerHTML) tip.innerHTML = h; }, 150);
+    const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, pad = 8;
+    const x = Math.min(Math.max(pad, r.left + r.width / 2 - w / 2), innerWidth - w - pad);
+    const y = r.top - h - pad >= pad ? r.top - h - pad : Math.min(r.bottom + pad, innerHeight - h - pad);
+    tip.style.left = x + 'px'; tip.style.top = Math.max(pad, y) + 'px';
+  }
+  const hideTip = () => { $('#tip').hidden = true; clearInterval(tipLive); };
+  let press = null, pressed = false;
+  document.addEventListener('pointerover', (e) => { const el = e.pointerType === 'mouse' && e.target.closest('[data-tip]'); if (el) showTip(el); });
+  document.addEventListener('pointerout', (e) => {
+    const el = e.pointerType === 'mouse' && e.target.closest('[data-tip]');
+    const to = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('[data-tip]');
+    if (el && to !== el) hideTip();
+  });
+  document.addEventListener('pointerdown', (e) => {
+    const el = e.pointerType !== 'mouse' && e.target.closest('[data-tip]');
+    if (!el) return;
+    pressed = false;
+    press = setTimeout(() => { pressed = true; showTip(el); }, 450);
+  });
+  const endPress = () => { clearTimeout(press); if (pressed) setTimeout(hideTip, 1800); };
+  document.addEventListener('pointerup', endPress);
+  document.addEventListener('pointercancel', endPress);
+  // A long-press shows info; it should not also count as a tap.
+  document.addEventListener('click', (e) => { if (pressed && e.target.closest('[data-tip]')) { e.stopPropagation(); e.preventDefault(); pressed = false; } }, true);
+  document.addEventListener('contextmenu', (e) => { if (e.target.closest('[data-tip]') && e.pointerType !== 'mouse') e.preventDefault(); });
 
   // text box
   let skip = null;
@@ -537,6 +641,7 @@
   // ---------------- bottom screen ----------------
   function nextPrompt() {
     const b = G.b;
+    snapshot();
     if (b.ended) return finish();
     const r = b.p1.activeRequest;
     precompute();
@@ -578,7 +683,7 @@
     const trapped = !forced && r.active && r.active[0].trapped;
     $('#touch').innerHTML = `<div class="party">${G.b.p1.pokemon.map((p, i) => {
       const pct = p.hp / p.maxhp;
-      return `<button class="pm${i === 0 && !forced ? ' cur' : ''}${p.fainted ? ' out' : ''}" data-i="${i}">
+      return `<button class="pm${i === 0 && !forced ? ' cur' : ''}${p.fainted ? ' out' : ''}" data-i="${i}" data-tip="p1:${i}">
         <span class="pm-g">${glyph(p.species.name, 40)}</span>
         <span class="pm-n">${esc(p.species.name)}<small>${p.status ? p.status.toUpperCase() : ''}</small></span>
         <span class="pm-hp"><i style="width:${(pct * 100).toFixed(0)}%" data-lvl="${pct > 0.5 ? 'g' : pct > 0.2 ? 'y' : 'r'}"></i></span>

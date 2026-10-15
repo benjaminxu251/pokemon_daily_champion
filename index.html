@@ -49,20 +49,22 @@
     <div class="device">
       <div class="screen" id="scene">
         <div class="plat p2"></div><div class="plat p1"></div>
-        <div class="battler p2" id="mon-p2"></div>
-        <div class="battler p1" id="mon-p1"></div>
-        <div class="hpbox p2" id="box-p2" hidden>
+        <div class="battler p2" id="mon-p2" data-tip="p2:a"></div>
+        <div class="battler p1" id="mon-p1" data-tip="p1:a"></div>
+        <div class="hpbox p2" id="box-p2" data-tip="p2:a" hidden>
           <div class="bx-top"><span class="bx-name"></span><span class="bx-mega" hidden>MEGA</span><span class="bx-lv"></span></div>
           <div class="bx-hp"><b>HP</b><span class="hp-track"><i class="hp-fill"></i></span></div>
           <div class="bx-row2"><span class="bx-status"></span></div>
+          <div class="bx-chips"></div>
+          <div class="balls" id="balls-p2"></div>
         </div>
-        <div class="hpbox p1" id="box-p1" hidden>
+        <div class="hpbox p1" id="box-p1" data-tip="p1:a" hidden>
           <div class="bx-top"><span class="bx-name"></span><span class="bx-mega" hidden>MEGA</span><span class="bx-lv"></span></div>
           <div class="bx-hp"><b>HP</b><span class="hp-track"><i class="hp-fill"></i></span></div>
           <div class="bx-row2"><span class="bx-status"></span><span class="bx-hpnum"></span></div>
+          <div class="bx-chips"></div>
+          <div class="balls" id="balls-p1"></div>
         </div>
-        <div class="balls" id="balls-p2"></div>
-        <div class="balls" id="balls-p1"></div>
         <div id="textbox" role="status" aria-live="polite"><span id="textbox-t"></span></div>
       </div>
       <div class="bt-bar"><span class="bt-mode" id="bt-mode"></span><button class="pill" id="btn-foe">Cynthia's team</button></div>
@@ -72,6 +74,7 @@
 </main>
 <p class="foot">Unofficial fan project, not affiliated with Nintendo, Game Freak or The Pokémon Company. Battle engine: Pokémon Showdown (MIT).</p>
 <div id="modal" hidden></div>
+<div id="tip" role="tooltip" hidden></div>
 
 <script src="vendor/sim.js"></script>
 <script src="src/core.js"></script>
@@ -79,6 +82,7 @@
 <script src="src/e4.js"></script>
 <script src="src/art.js"></script>
 <script src="src/scenes.js"></script>
+<script src="src/intro.js"></script>
 <script src="src/app.js"></script>
 </body>
 </html>

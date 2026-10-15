@@ -215,6 +215,20 @@ Poppy · Olivia · Lacey · Lucian
 - The battle intro shows the player's trainer (Lucas/Dawn, Brendan/May, Florian/Juliana, by the Player setting) and the opponent on their platforms, then both step away as the leads are sent out. The lobby shows the opponent, the style button shows the player, and the Elite Four lineup shows each member.
 - With Settings → Art on official sprites (the default), trainers are Showdown trainer sprites linked at runtime: `lucas-gen4pt`/`dawn-gen4pt`, `brendan`/`may` (ORAS), `florian-s`/`juliana-s`, and each opponent's battle-style era variant where one exists (`cynthia-gen4`, `agatha-gen3`...). With drawn art, the player uses the original drawn trainers and opponents are not drawn.
 
+**Encounter intros** (`src/intro.js`, one per battle style; tap to skip, off with reduced motion)
+- Gen 3: black bars sweep in, then an Emerald-style League strip slides in with both trainers and the opponent's title.
+- Gen 4: the DPPt League mugshot: a band slides in with the opponent and their title on black.
+- Gen 6: an ORAS VS screen, player left and opponent right, with VS slamming in.
+- Gen 9: a white flash into a spinning burst with the opponent's card.
+- Then both trainers walk onto their platforms (slide in for Gen 3/4, pop in for Gen 6/9), the challenge line plays, and they step away as the leads come out.
+
+**Battle info on hover**
+- Like Showdown, hovering a Pokémon in battle shows a tooltip: name, level, types, HP (% for both sides, plus exact HP for the player's), status, held item, ability, stats with stat-stage boosts, and each move with its remaining PP.
+- It works on both active Pokémon (sprite or HP box), the team balls, and the party menu. On touch screens, long-press instead; a long-press doesn't also count as a tap.
+- The opponent's info is shown in full, matching the open team sheets.
+- The tooltip stays live while open: HP drains as the bar animates. Stats show their effective value with the stage applied, green and +N when raised, red and -N when lowered (-6 to +6).
+- Under each HP box, Showdown-style chips list non-zero stat stages, volatile effects (Confused, Substitute, Leech Seed, Taunt, Perish N...) and that side's conditions (Stealth Rock, Spikes ×2, Reflect, Tailwind...). They update when a turn's text finishes, so they never run ahead of the battle text.
+
 **Responsive**
 - Phones (portrait): the screens stack. The device is sized to fit the viewport height.
 - Desktop or landscape (≥820px wide and wider than 5:4): the screens sit side by side, the scene at about 60% width and the menu beside it.
