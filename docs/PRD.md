@@ -192,6 +192,16 @@ Poppy · Olivia · Lacey · Lucian
 **Pokémon visuals**
 - Each Pokémon is drawn as an original "stat glyph": a hexagon shaped by its base stats and filled with its type colors. Mega forms get an outline ring. No official sprites are used.
 
+**Battle style**
+- Players pick the battle screen's look in Settings before entering a battle. Each lobby shows the current style next to the start button, and tapping it opens Settings.
+- Options:
+  - **Default:** each opponent's own generation (Cynthia Gen 4, Zinnia Gen 6, Elite Four Gen 9).
+  - **Gen 3:** GBA-style field, cream info boxes, slate text bar and a white command box with a ▶ cursor.
+  - **Gen 4:** the DPPt-style skin.
+  - **Gen 6:** the ORAS-style skin.
+- The style is cosmetic only. Rules and battle text still follow the opponent's generation.
+- Gen 3 and Gen 4 draw the glyphs with hard pixel edges.
+
 **Responsive**
 - Phones (portrait): the screens stack. The device is sized to fit the viewport height.
 - Desktop or landscape (≥820px wide and wider than 5:4): the screens sit side by side, the scene at about 60% width and the menu beside it.
@@ -203,6 +213,7 @@ Poppy · Olivia · Lacey · Lucian
 ## 8. Audio and settings
 
 **Settings modal**
+- Battle style (Display section): Default, Gen 3, Gen 4 or Gen 6. See below.
 - Mute everything.
 - Music volume.
 - Menu sounds on/off.

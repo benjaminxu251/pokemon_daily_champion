@@ -13,7 +13,13 @@
   function readKey(k) { try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage blocked */ } }
   const DEFAULT_SLOTS = {menu: 'b:menu', battle_cynthia: 'b:hall', battle_zinnia: 'b:sky', battle_e4: 'b:league', pinch: 'b:pinch', victory: 'b:victory', defeat: 'b:defeat'};
-  const S = Object.assign({stats: {}, runs: {}, music: {vol: 0.5, speed: 'normal'}, lib: []}, readKey(KEY) || {});
+  const S = Object.assign({stats: {}, runs: {}, music: {vol: 0.5, speed: 'normal'}, lib: [], style: 'default'}, readKey(KEY) || {});
+  // Battle screen styles; 'default' follows the opponent's own generation.
+  const STYLES = {default: 'Default (match the opponent)', gen3: 'Gen 3 (Ruby, Sapphire, Emerald)', gen4: 'Gen 4 (Diamond, Pearl, Platinum)', gen6: 'Gen 6 (X, Y, ORAS)'};
+  const STYLE_SKIN = {gen3: 'gen3', gen4: 'dppt', gen6: 'oras'};
+  const skinFor = (o) => STYLE_SKIN[S.style] || o.skin;
+  const SKIN_LABEL = {gen3: 'Gen 3', dppt: 'Gen 4', oras: 'Gen 6', sv: 'Gen 9'};
+  const styleNote = (o) => '<button class="btn tiny ghost style-note" data-style-open>Battle style: ' + SKIN_LABEL[skinFor(o)] + (S.style === 'default' ? ' (default)' : '') + '</button>';
   S.music.slots = Object.assign({}, DEFAULT_SLOTS, S.music.slots);
   if (!readKey(KEY)) { // carry over records from the first version
     const old = readKey('champdaily:v1');
@@ -272,7 +278,7 @@
           ${run && run.result
             ? `<button class="btn gold" id="btn-result">See result</button><button class="btn" id="btn-practice">Practice battle</button>`
             : `<button class="btn gold" id="btn-start">${run ? 'Resume battle' : 'Challenge ' + o.name}</button>`}
-          <span class="status-line">${doneTxt}</span>
+          ${styleNote(o)}<span class="status-line">${doneTxt}</span>
         </div>
         <dl class="stats">
           <div><dt>Wins</dt><dd>${st.w}</dd></div><div><dt>Losses</dt><dd>${st.l}</dd></div>
@@ -338,7 +344,7 @@
 
   async function enterBattle(resumed) {
     show('battle');
-    $('.device').dataset.skin = OPP.skin;
+    $('.device').dataset.skin = skinFor(OPP);
     $('#btn-foe').textContent = `${OPP.name}'s team`;
     $('#bt-mode').textContent = `${G.mode === 'daily' ? 'Day ' + C.dayNumber(today) : 'Practice'} · ${G.kind === 'e4' ? `Elite Four ${G.e4.stage + 1}/4 · ` : ''}${OPP.name}`;
     for (const s of ['p1', 'p2']) { $(`#box-${s}`).hidden = true; $(`#mon-${s}`).innerHTML = ''; }
@@ -735,7 +741,7 @@
         <p class="eyebrow">Day ${C.dayNumber(today)} · Gen IX rules · Lv100</p>
         <h1 class="opp-h">Elite <em>Four</em></h1>
         <p class="lede">Four type specialists drawn from every region, the same for everyone today. Beat all four with one team. Lose once and today's run is over, but you can keep going in practice.</p>
-        <div class="cta-row">${cta}</div>
+        <div class="cta-row">${cta}${styleNote(E4.asOpp(LINEUP[0]))}</div>
         <dl class="stats">
           <div><dt>Cleared</dt><dd>${st.w}</dd></div><div><dt>Fell</dt><dd>${st.l}</dd></div>
           <div><dt>Streak</dt><dd>${st.streak}</dd></div><div><dt>Best</dt><dd>${st.best}</dd></div>
@@ -874,6 +880,8 @@
     const M = $('#modal');
     M.innerHTML = `<div class="sheet settings" role="dialog" aria-modal="true" aria-labelledby="set-h">
       <div class="foe-head"><h2 id="set-h">Settings</h2><button class="btn tiny ghost" id="set-x">Close</button></div>
+      <h3>Display</h3>
+      <div class="set-row"><label for="style">Battle style</label><select id="style">${Object.entries(STYLES).map(([k, v]) => `<option value="${k}" ${S.style === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
       <h3>Sound</h3>
       <div class="set-row"><label for="mute">Mute everything</label><input type="checkbox" id="mute" ${S.music.muted ? 'checked' : ''}></div>
       <div class="set-row"><label for="vol">Music volume</label><input type="range" id="vol" min="0" max="1" step="0.05" value="${S.music.vol}"></div>
@@ -894,6 +902,7 @@
     $('#vol').oninput = (e) => { Music.setVol(+e.target.value); save(); };
     $('#sfx').onchange = (e) => { S.music.sfx = e.target.checked; save(); };
     $('#spd').onchange = (e) => { S.music.speed = e.target.value; save(); };
+    $('#style').onchange = (e) => { S.style = e.target.value; save(); if (G) $('.device').dataset.skin = skinFor(OPP); };
     M.querySelectorAll('select[data-k]').forEach((sel) => sel.onchange = () => { S.music.slots[sel.dataset.k] = sel.value; save(); if (currentMusicSlot() === sel.dataset.k) resume(); });
     M.querySelectorAll('[data-preview]').forEach((b) => b.onclick = () => { Music.unlock(); Music.preview(S.music.slots[b.dataset.preview]); });
     M.querySelectorAll('.lib input[type=text]').forEach((inp) => inp.onchange = () => { const t = S.lib.find((x) => x.id === inp.dataset.id); if (t) { t.name = inp.value.trim() || t.name; save(); openSettings(); } });
@@ -911,7 +920,7 @@
       save();
       if (added) openSettings(); else $('#lib-msg').textContent = 'This browser blocked saving the files.';
     };
-    $('#set-x').onclick = $('#set-done').onclick = () => { M.hidden = true; if (Music.slot === '__preview' || !Music.slot) resume(); };
+    $('#set-x').onclick = $('#set-done').onclick = () => { M.hidden = true; if (document.body.dataset.view === 'lobby') (OPP.id === 'e4' || OPP.member ? renderE4 : renderLobby)(); if (Music.slot === '__preview' || !Music.slot) resume(); };
   }
 
   function setMuteBtn() { $('#btn-mute').textContent = S.music.muted ? 'Sound off' : 'Sound on'; $('#btn-mute').setAttribute('aria-pressed', !S.music.muted); }
@@ -920,6 +929,7 @@
     if (S.music.muted) Music.stop(); else { Music.unlock(); Music.play(currentMusicSlot(), true); }
   };
   $('#btn-settings').onclick = openSettings;
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-style-open]')) openSettings(); });
   $('#btn-about').onclick = () => { Music.blip(); if (G && !G.b.ended) G = G; show('about'); };
   $('#about-back').onclick = () => { if (G && !G.b.ended) show('battle'); else goHome(); };
   $('#btn-home').onclick = () => goHome();

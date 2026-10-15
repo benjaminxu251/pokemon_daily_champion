@@ -312,6 +312,59 @@ body[data-opp="zinnia"] .mon.is-lead, body[data-opp="zinnia"] .diff button[aria-
 .device[data-skin="oras"] .summ { border-radius: 10px; }
 
 
+/* ---------- Gen 3 skin: GBA field, cream info boxes, slate text bar, white command box ---------- */
+.device[data-skin="gen3"] { --hp-g: #58d080; --hp-y: #f8e038; --hp-r: #f85838; background: #3b3550; box-shadow: inset 0 0 0 2px #514a6a, 0 18px 40px rgba(0,0,0,.45); }
+.device[data-skin="gen3"] #scene { background: linear-gradient(180deg, #f0f4d0 0%, #d8ecb0 38%, #b8dc88 62%, #90c868 100%); }
+.device[data-skin="gen3"] #scene::before { background: repeating-linear-gradient(0deg, transparent 0 6px, rgba(64,112,48,.07) 6px 8px); }
+.device[data-skin="gen3"] #scene::after { display: none; }
+.device[data-skin="gen3"] .plat { background: radial-gradient(closest-side, #a8d878, #88c060 72%, #609848); box-shadow: inset 0 -3px 0 rgba(48,88,32,.35); }
+.device[data-skin="gen3"] .hpbox { background: #f8f8d8; color: #303030; border: 3px solid #404838; border-radius: 6px; padding: 3px 8px 4px; box-shadow: inset 0 0 0 2px #d8d8a8, 3px 3px 0 rgba(48,56,40,.35); }
+.device[data-skin="gen3"] .hpbox.p2 { border-left: 3px solid #404838; }
+.device[data-skin="gen3"] .hpbox.p1 { border-right: 3px solid #404838; border-radius: 6px 6px 18px 6px; }
+.device[data-skin="gen3"] .bx-top { text-transform: uppercase; letter-spacing: .02em; }
+.device[data-skin="gen3"] .bx-hp b { background: #504830; color: #f8c838; border-radius: 3px 0 0 3px; padding: 0 4px; }
+.device[data-skin="gen3"] .hp-track { background: #505848; border-radius: 0 3px 3px 0; padding: 2px; height: 8px; }
+.device[data-skin="gen3"] .hp-fill { border-radius: 1px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.15); }
+.device[data-skin="gen3"] .ball { background: radial-gradient(circle at 35% 35%, #fff, #f85838 60%); }
+.device[data-skin="gen3"] .ball.out { background: #9a9a90; }
+.device[data-skin="gen3"] #textbox { background: #384860; color: #f8f8f8; border: 3px solid #a8b8d0; border-radius: 4px; box-shadow: inset 0 0 0 2px #283448, 0 0 0 2px #202838; text-shadow: 1px 1px 0 #182030; }
+.device[data-skin="gen3"] #touch { background: #384860; padding: 8px; }
+.device[data-skin="gen3"] #touch:has(> .t-fight) { grid-template-columns: 1fr 1fr; align-content: center; background: #f8f8f8; border: 3px solid #707090; box-shadow: inset 0 0 0 2px #c8c8d8; gap: 4px 10px; padding: 14px 16px; }
+.device[data-skin="gen3"] #touch:has(> .t-fight) .t-row { display: contents; }
+.device[data-skin="gen3"] .t-fight, .device[data-skin="gen3"] .t-small, .device[data-skin="gen3"] .mv, .device[data-skin="gen3"] .t-back, .device[data-skin="gen3"] .t-go, .device[data-skin="gen3"] .t-mega {
+  position: relative; background: #f8f8f8; color: #383838; text-shadow: 1px 1px 0 #d0d0c8; border: 0; border-radius: 0; box-shadow: none; margin: 0; filter: none;
+  text-align: left; font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 6px 8px 6px 26px; display: grid; justify-items: start; }
+.device[data-skin="gen3"] .t-fight { order: 1; font-size: clamp(16px, 5.4cqw, 26px); } .device[data-skin="gen3"] .t-bag { order: 2; } .device[data-skin="gen3"] .t-mon { order: 3; } .device[data-skin="gen3"] .t-run { order: 4; }
+.device[data-skin="gen3"] .t-small span { font-size: clamp(16px, 5.4cqw, 26px); }
+.device[data-skin="gen3"] .t-fight small, .device[data-skin="gen3"] .t-small small { font-size: 11px; font-weight: 400; color: #787878; text-transform: none; opacity: 1; letter-spacing: 0; }
+.device[data-skin="gen3"] .t-fight::before, .device[data-skin="gen3"] .t-small::before, .device[data-skin="gen3"] .mv::before, .device[data-skin="gen3"] .t-back::before, .device[data-skin="gen3"] .t-go::before, .device[data-skin="gen3"] .t-mega::before {
+  content: "▶"; position: absolute; left: 6px; top: 7px; font-size: .9em; color: #383838; opacity: 0; }
+.device[data-skin="gen3"] :is(.t-fight, .t-small, .mv, .t-back, .t-go, .t-mega):is(:hover, :focus-visible)::before { opacity: 1; }
+.device[data-skin="gen3"] :is(.t-fight, .t-small, .mv, .t-back, .t-go, .t-mega):focus-visible { outline: none; }
+.device[data-skin="gen3"] .t-small:disabled { color: #b0b0a8; text-shadow: none; }
+.device[data-skin="gen3"] .moves { background: #f8f8f8; border: 3px solid #707090; box-shadow: inset 0 0 0 2px #c8c8d8; padding: 8px; gap: 2px 8px; }
+.device[data-skin="gen3"] .mv { border-left: 5px solid var(--tc); padding-left: 24px; }
+.device[data-skin="gen3"] .mv::before { left: 9px; }
+.device[data-skin="gen3"] .mv-n { font-size: clamp(14px, 4.6cqw, 21px); }
+.device[data-skin="gen3"] .mv-pp, .device[data-skin="gen3"] .mv-t { color: #686868; text-shadow: none; opacity: 1; }
+.device[data-skin="gen3"] .mv-t { justify-self: stretch; gap: 8px; }
+.device[data-skin="gen3"] .mv-t i { font-style: normal; }
+.device[data-skin="gen3"] .mv:disabled { color: #b0b0a8; }
+.device[data-skin="gen3"] .t-pair { background: #f8f8f8; border: 3px solid #707090; padding: 2px; }
+.device[data-skin="gen3"] .t-mega.on { color: #c03070; }
+.device[data-skin="gen3"] .t-mega.on::before { opacity: 1; content: "★"; color: #c03070; }
+.device[data-skin="gen3"] .t-go.warn { color: #c03030; }
+.device[data-skin="gen3"] .party { gap: 4px; }
+.device[data-skin="gen3"] .pm { background: #4870b8; border-radius: 12px 4px 12px 4px; box-shadow: inset 0 0 0 2px #88a8e0, 0 0 0 2px #283860; text-transform: uppercase; }
+.device[data-skin="gen3"] .pm.cur { background: #e06858; box-shadow: inset 0 0 0 2px #f8a898, 0 0 0 2px #702820; }
+.device[data-skin="gen3"] .pm.out { background: #807888; }
+.device[data-skin="gen3"] .summ { background: #f8f8d8; border: 3px solid #404838; border-radius: 4px; }
+.device[data-skin="gen3"] .confirm { color: #f8f8f8; }
+.device[data-skin="gen3"] .waiting span { background: #f8f8f8; }
+.device[data-skin="gen3"] .t-fight:active { transform: none; }
+/* pixel-era styles draw the Pokémon glyphs with hard edges */
+.device[data-skin="gen3"] .glyph, .device[data-skin="dppt"] .glyph { shape-rendering: crispEdges; }
+
 /* ---------- Elite Four ---------- */
 .opp-card[data-o="e4"] { background: linear-gradient(160deg, #3a1f3f, #1e1a33 60%); }
 .opp-card[data-o="e4"] .gen-badge, body[data-opp="e4"] .btn.gold, .opp-card[data-o="e4"] .btn.gold { background: var(--e4); border-color: var(--e4); color: #2b0a1e; box-shadow: 0 3px 0 #9a3f6d; }
