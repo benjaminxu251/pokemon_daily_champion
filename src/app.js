@@ -80,7 +80,9 @@
     if (S.art === 'drawn') return drawn(species, size, opts);
     const dex = opts.dex || D, sp = dex.species.get(species);
     const sets = opts.battle ? SPR_SETS[skinFor(OPP)] : SPR_SETS.thumb;
-    const urls = sets.map((s) => SPR + s + (opts.back ? '-back' : '') + '/' + sp.spriteid + (s === 'ani' ? '.gif' : '.png'));
+    // Forms with no sprite of their own (Greninja-Bond looks like Greninja) fall back to the base species before the drawn art.
+    const ids = [sp.spriteid, dex.species.get(sp.baseSpecies).spriteid].filter((v, i, a) => a.indexOf(v) === i);
+    const urls = ids.flatMap((id) => sets.map((s) => SPR + s + (opts.back ? '-back' : '') + '/' + id + (s === 'ani' ? '.gif' : '.png')));
     return `<img class="glyph spr${opts.battle ? '' : ' thumb'}" src="${urls[0]}" data-fb="${urls.slice(1).join(' ')}" data-sp="${esc(sp.name)}" data-gen="${dex.gen}" data-size="${size}"${opts.back ? ' data-back="1"' : ''}${opts.battle ? ' data-battle="1"' : ''} width="${size}" height="${size}" alt="${esc(sp.name)}" onerror="__sprFail(this)" onload="__sprLoad(this)">`;
   }
   window.__sprFail = (img) => {
