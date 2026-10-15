@@ -21,16 +21,31 @@
   function rentals(tier, runId) {
     return gen(tier, 'rent|' + runId).randomFactoryTeam({}).map(clean);
   }
-  // The opponent for battle n (0-based): three Pokémon from a factory team of the same tier, avoiding the player's species.
+  // One set drawn straight from the tier's pool: species by Showdown's species weight, then a set by its weight,
+  // then one option per move slot, item, ability and nature. No team-building or synergy step.
+  const pickW = (r, items, w) => { let x = r() * items.reduce((t, i) => t + w(i), 0); for (const i of items) if ((x -= w(i)) < 0) return i; return items[items.length - 1]; };
+  const one = (r, v) => Array.isArray(v) ? v[Math.floor(r() * v.length)] : v;
+  function randomSet(tier, r, avoid) {
+    const pool = Object.entries(window.FACTORY_SETS[tier]).filter(([, d]) => !d.sets.some((s) => avoid.has(baseOf(s.species))));
+    const [, d] = pickW(r, pool, ([, x]) => x.weight || 1);
+    const s = pickW(r, d.sets, (x) => x.weight || 1);
+    const moves = [];
+    for (const slot of s.moves) { const opts = slot.filter((m) => !moves.includes(m)); if (opts.length) moves.push(one(r, opts)); }
+    return {name: s.species.replace(/-.*/, ''), species: s.species, gender: s.gender || '', item: one(r, s.item), ability: one(r, s.ability), nature: one(r, s.nature),
+      evs: Object.assign({hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0}, s.evs), ivs: Object.assign({hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31}, s.ivs), moves, level: 100};
+  }
+  const baseOf = (sp) => Core.dexFor(9).species.get(sp).baseSpecies;
+  // The opponent for battle n (0-based): three random sets from the tier, never sharing a species with the player or each other.
   function opponent(tier, runId, n, mine) {
-    const taken = new Set(mine.map((s) => s.species));
-    const team = gen(tier, 'opp|' + runId + '|' + n).randomFactoryTeam({}).map(clean).filter((s) => !taken.has(s.species));
+    const avoid = new Set(mine.map((s) => baseOf(s.species)));
+    const rs = rand('opp|' + tier + '|' + runId + '|' + n), team = [];
+    while (team.length < 3) { const s = randomSet(tier, rs, avoid); avoid.add(baseOf(s.species)); team.push(s); }
     const r = rand('trainer|' + runId + '|' + n);
     const head = HEAD_AT.includes(n + 1);
     const cls = head ? null : CLASSES[Math.floor(r() * CLASSES.length)];
     const name = head ? 'Noland' : NAMES[cls[2]][Math.floor(r() * NAMES[cls[2]].length)];
     return {
-      sets: team.slice(0, 3), head,
+      sets: team, head,
       trainer: head ? {name, title: 'Factory Head Noland', sprite: 'noland-gen3'} : {name, title: `${cls[1]} ${name}`, sprite: cls[0] + '-gen3'},
     };
   }

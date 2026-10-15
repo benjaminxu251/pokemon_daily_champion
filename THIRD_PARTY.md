@@ -17,7 +17,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## Pokémon Showdown Battle Factory sets
 
-`vendor/factory-sets.js` is `data/random-battles/gen9/factory-sets.json` from https://github.com/smogon/pokemon-showdown (MIT, same license and copyright as above), wrapped as a script. Refresh it with `tools/update-factory-sets.sh`.
+`vendor/factory-sets.js` is `data/random-battles/gen9/factory-sets.json` from https://github.com/smogon/pokemon-showdown (MIT, same license and copyright as above), wrapped as a script, with each Tera Blast replaced by that Pokémon's most-used other move from Smogon's usage statistics (https://www.smogon.com/stats/). Refresh it with `node tools/update-factory-sets.js`.
 
 ## Pixelify Sans and Barlow Semi Condensed
 

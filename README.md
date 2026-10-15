@@ -47,7 +47,7 @@ src/
   ai-worker.js      runs the AI off the main thread
   app.js            UI: menus, lobbies, battle screen, settings, audio
 vendor/sim.js       Pokémon Showdown engine bundle (prebuilt)
-vendor/factory-sets.js  Showdown's Gen 9 Battle Factory sets (tools/update-factory-sets.sh)
+vendor/factory-sets.js  Showdown's Gen 9 Battle Factory sets (`node tools/update-factory-sets.js`)
 build/              rebuilds vendor/sim.js
 tools/              headless AI benchmarks; art.html is a gallery of every Pokémon's art
 docs/PRD.md         product requirements: what the game is and why
