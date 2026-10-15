@@ -25,6 +25,7 @@
     set('Tyrantrum', 'Choice Band', 'Rock Head', 'Adamant', ['Head Smash', 'Outrage', 'Earthquake', 'Crunch'], PHYS),
     set('Altaria', 'Leftovers', 'Natural Cure', 'Calm', ['Draco Meteor', 'Fire Blast', 'Roost', 'Toxic'], {hp: 248, spa: 8, spd: 252}),
     set('Noivern', 'Choice Specs', 'Infiltrator', 'Timid', ['Draco Meteor', 'Hurricane', 'Flamethrower', 'Boomburst'], SPEC),
+    set('Flygon', 'Choice Scarf', 'Levitate', 'Jolly', ['Earthquake', 'Outrage', 'U-turn', 'Stone Edge'], PHYS),
     set('Salamence', 'Salamencite', 'Intimidate', 'Adamant', ['Dragon Dance', 'Return', 'Earthquake', 'Roost'], PHYS, {ace: true}),
   ];
   // Cynthia's Platinum team, in game order; Garchomp is her ace.

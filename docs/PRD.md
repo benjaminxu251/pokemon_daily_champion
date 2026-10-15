@@ -73,8 +73,8 @@ Where Champion Daily differs:
 
 - Rules are Gen 6 (ORAS): Fairy type, the Gen 6 type chart and Mega Evolution.
 - Player team: 6 sets from Showdown's Gen 6 Random Battle pool, at Showdown's levels. The sets may include Mega Stones. When one is held, a Mega Evolution toggle appears in the Fight menu, once per battle.
-- Zinnia's team is fixed to her Sky Pillar team, in game order: Goodra (lead), Tyrantrum, Altaria, Noivern, Salamence (ace). Her ace holds Salamencite and Mega Evolves.
-  - She has 5 Pokémon, matching the game. Her Whismur, Aster, travels with her but never battles.
+- Zinnia's team is fixed to her Sky Pillar team, in game order plus Flygon: Goodra (lead), Tyrantrum, Altaria, Noivern, Flygon, Salamence (ace). Her ace holds Salamencite and Mega Evolves.
+  - In the game she battles with 5. Flygon, the Hoenn dragon, is added before her ace to make a full 6.
   - Items: Goodra Assault Vest, Tyrantrum Choice Band, Altaria Leftovers, Noivern Choice Specs, Salamence Salamencite.
 - UI skin: ORAS-inspired look. Bright sky and grass arena, dark glassy info panels, rounded type-colored move buttons, and a sans-serif UI font.
 

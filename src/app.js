@@ -14,7 +14,7 @@
   const S = Object.assign({stats: {}, runs: {}, music: {vol: 0.5, speed: 'normal'}, lib: [], style: 'default'}, readKey(KEY) || {});
   // Bump RULES whenever teams, levels or battle rules change. A saved battle is a replayed choice log,
   // so an unfinished run from older rules would replay into a different battle; it restarts instead.
-  const RULES = 4;
+  const RULES = 5;
   for (const [k, r] of Object.entries(S.runs)) {
     const finished = r.result || r.status === 'won' || r.status === 'lost';
     if (!finished && r.rules !== RULES) { delete S.runs[k]; S.staleCleared = true; }
