@@ -342,6 +342,7 @@
   function reorder(t, i) { const a = t.slice(); const [x] = a.splice(i, 1); a.unshift(x); return a; }
 
   function show(view) {
+    $('#tip').hidden = true;
     $('#home').hidden = view !== 'home';
     $('#lobby').hidden = view !== 'lobby';
     $('#battle').hidden = view !== 'battle';
@@ -682,10 +683,18 @@
     tip.innerHTML = html; tip.hidden = false;
     // Keep it live while open: HP drains, boosts and PP change as the turn plays out.
     clearInterval(tipLive);
-    tipLive = setInterval(() => { if (tip.hidden || !G || !G.b) return clearInterval(tipLive); const h = tipHTML(el.dataset.tip); if (h && h !== tip.innerHTML) tip.innerHTML = h; }, 150);
+    // Close when the target is gone or no longer hovered: re-renders and screen changes don't fire pointerout.
+    tipLive = setInterval(() => {
+      if (tip.hidden || !G || !G.b || !el.isConnected || document.body.dataset.view !== 'battle' || !$('#modal').hidden || (!pressed && !el.matches(':hover'))) return hideTip();
+      const h = tipHTML(el.dataset.tip); if (h && h !== tip.innerHTML) tip.innerHTML = h;
+    }, 150);
     const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, pad = 8;
     const x = Math.min(Math.max(pad, r.left + r.width / 2 - w / 2), innerWidth - w - pad);
-    const y = r.top - h - pad >= pad ? r.top - h - pad : Math.min(r.bottom + pad, innerHeight - h - pad);
+    // Never cover the menu screen: open above the target, and if that doesn't fit, sit just above the menu instead.
+    const menuTop = $('#touch').getBoundingClientRect().top;
+    const limit = el.closest('#touch') ? menuTop : Math.min(menuTop, r.top);
+    let y = limit - h - pad;
+    if (y < pad && !el.closest('#touch')) y = Math.min(r.bottom + pad, menuTop - h - pad);
     tip.style.left = x + 'px'; tip.style.top = Math.max(pad, y) + 'px';
   }
   const hideTip = () => { $('#tip').hidden = true; clearInterval(tipLive); };
@@ -704,6 +713,7 @@
   });
   const endPress = () => { clearTimeout(press); if (pressed) setTimeout(hideTip, 1800); };
   document.addEventListener('pointerup', endPress);
+  document.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') hideTip(); }, true);
   document.addEventListener('pointercancel', endPress);
   // A long-press shows info; it should not also count as a tap.
   document.addEventListener('click', (e) => { if (pressed && e.target.closest('[data-tip]')) { e.stopPropagation(); e.preventDefault(); pressed = false; } }, true);
