@@ -7,12 +7,12 @@
     Poison: '#9a46a8', Ground: '#d2ad5e', Flying: '#8f9be8', Psychic: '#ea5a86', Bug: '#9aad25', Rock: '#b49d3c', Ghost: '#6a5596',
     Dragon: '#6640e8', Dark: '#6b5548', Steel: '#a5a5c4', Fairy: '#e48ec4', '???': '#68a090'};
   const KEY = 'champdaily:v2';
-  const OPPS = [C.OPP.cynthia];
+  const OPPS = [C.OPP.cynthia, C.OPP.zinnia];
 
   // ---------------- storage ----------------
   function readKey(k) { try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage blocked */ } }
-  const DEFAULT_SLOTS = {menu: 'b:menu', battle_cynthia: 'b:hall', pinch: 'b:pinch', victory: 'b:victory', defeat: 'b:defeat'};
+  const DEFAULT_SLOTS = {menu: 'b:menu', battle_cynthia: 'b:hall', battle_zinnia: 'b:sky', pinch: 'b:pinch', victory: 'b:victory', defeat: 'b:defeat'};
   const S = Object.assign({stats: {}, runs: {}, music: {vol: 0.5, speed: 'normal'}, lib: []}, readKey(KEY) || {});
   S.music.slots = Object.assign({}, DEFAULT_SLOTS, S.music.slots);
   if (!readKey(KEY)) { // carry over records from the first version
@@ -58,12 +58,13 @@
   const BUILTIN = {
     menu: {label: 'Champion Daily menu', bpm: 92, loop: true, lead: [12, null, 15, 19, 17, null, 15, 12, 10, null, 12, 15, 14, null, null, null, 12, null, 15, 19, 22, null, 20, 19, 17, 15, 14, 15, 12, null, null, null], bass: [0, 0, 7, 7, 5, 5, 3, 3]},
     hall: {label: 'Champion\'s Hall', bpm: 170, loop: true, lead: [24, 22, 19, 22, 24, 27, 26, 24, 22, 19, 17, 19, 22, null, 19, null, 24, 22, 19, 22, 24, 27, 29, 31, 29, 27, 26, 24, 22, 24, null, null], bass: [0, 12, 0, 12, 0, 12, 0, 12, -2, 10, -2, 10, -4, 8, -2, 10]},
+    sky: {label: 'Pillar Wind', bpm: 154, loop: true, lead: [19, 23, 26, 23, 28, 26, 23, 21, 19, null, 21, 23, 26, null, null, null, 24, 26, 28, 31, 30, 28, 26, 24, 23, 24, 26, 23, 19, null, 21, null], bass: [-2, 10, -2, 10, 3, 15, 3, 15, 5, 17, 5, 17, 0, 12, 2, 14]},
     pinch: {label: 'Last Stand', bpm: 196, loop: true, lead: [27, 26, 24, 26, 27, 31, 27, 26, 24, 22, 24, 26, 27, null, 31, null, 32, 31, 29, 27, 26, 27, 29, 31, 34, 32, 31, 29, 27, 26, 24, null], bass: [0, 0, 12, 0, 1, 1, 13, 1]},
     victory: {label: 'Victory jingle', bpm: 150, loop: false, lead: [19, 19, 19, 24, null, 22, 24, null, 27, 26, 24, 26, 31, null, null, null], bass: [0, 7, 5, 7, 3, 7, 0, null]},
     defeat: {label: 'Defeat jingle', bpm: 80, loop: false, lead: [15, 14, 12, 10, 9, null, 7, null, 5, null, null, null], bass: [0, null, -2, null, -5, null]},
   };
-  const SLOT_LABEL = {menu: 'Menus', battle_cynthia: 'Cynthia battle', pinch: 'Her last Pokémon', victory: 'Victory', defeat: 'Defeat'};
-  const LOOPS = {menu: true, battle_cynthia: true, pinch: true, victory: false, defeat: false};
+  const SLOT_LABEL = {menu: 'Menus', battle_cynthia: 'Cynthia battle', battle_zinnia: 'Zinnia battle', pinch: 'Her last Pokémon', victory: 'Victory', defeat: 'Defeat'};
+  const LOOPS = {menu: true, battle_cynthia: true, battle_zinnia: true, pinch: true, victory: false, defeat: false};
 
   const Music = (() => {
     let ctx = null, gain = null, cur = null, curSlot = null, el = null, timer = null;
@@ -190,7 +191,7 @@
   const teams = {}, foes = {};
   const teamFor = (o) => teams[o.id] || (teams[o.id] = C.playerTeam(today, o));
   const foeFor = (o) => foes[o.id] || (foes[o.id] = C.oppTeam(today, o));
-  const leads = {cynthia: 0};
+  const leads = {cynthia: 0, zinnia: 0};
   let G = null;
   const runKey = (o = OPP, d = diff) => `${today}:${o.id}:${d}`;
   const dName = (d) => (d === 'easy' ? 'Easy' : 'Hard');
@@ -213,7 +214,7 @@
       <section class="hero">
         <p class="eyebrow">Day ${num} · ${today}</p>
         <h1>Champion <em>Daily</em></h1>
-        <p class="lede">Champion Cynthia brings her Platinum team. You get a fresh random team every day, the same for everyone.</p>
+        <p class="lede">Pick today's opponent. Each champion brings her team from her original game, and you get a fresh random team for each fight every day, the same for everyone.</p>
       </section>
       <div class="opp-grid">${OPPS.map((o) => {
         setOpp(o);

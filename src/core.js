@@ -19,12 +19,22 @@
     set('Glaceon', 'Choice Specs', 'Snow Cloak', 'Modest', ['Blizzard', 'Ice Beam', 'Shadow Ball', 'Hidden Power Fire'], {hp: 4, spa: 252, spe: 252}, {ivs: Object.assign({}, IV, {atk: 30, spa: 30, spe: 30})}),
     set('Garchomp', 'Yache Berry', 'Sand Veil', 'Jolly', ['Swords Dance', 'Outrage', 'Earthquake', 'Stone Edge'], PHYS, {ace: true}),
   ];
+  // Zinnia's Sky Pillar team (ORAS), in game order. Salamence is her ace and holds the Salamencite.
+  const ZINNIA_TEAM = [
+    set('Goodra', 'Assault Vest', 'Sap Sipper', 'Modest', ['Draco Meteor', 'Fire Blast', 'Sludge Bomb', 'Thunderbolt'], {hp: 248, spa: 252, spd: 8}),
+    set('Tyrantrum', 'Choice Band', 'Rock Head', 'Adamant', ['Head Smash', 'Outrage', 'Earthquake', 'Crunch'], PHYS),
+    set('Altaria', 'Leftovers', 'Natural Cure', 'Calm', ['Draco Meteor', 'Fire Blast', 'Roost', 'Toxic'], {hp: 248, spa: 8, spd: 252}),
+    set('Noivern', 'Choice Specs', 'Infiltrator', 'Timid', ['Draco Meteor', 'Hurricane', 'Flamethrower', 'Boomburst'], SPEC),
+    set('Salamence', 'Salamencite', 'Intimidate', 'Adamant', ['Dragon Dance', 'Return', 'Earthquake', 'Roost'], PHYS, {ace: true}),
+  ];
   // Cynthia's Platinum team, in game order; Garchomp is her ace.
   const CYNTHIA = ['Spiritomb', 'Roserade', 'Togekiss', 'Lucario', 'Milotic', 'Garchomp'].map((n) => CYNTHIA_POOL.find((m) => m.species === n));
 
   const OPP = {
     cynthia: {id: 'cynthia', name: 'Cynthia', title: 'Champion Cynthia', gen: 4, randFormat: 'gen4randombattle', format: 'gen4customgame',
       team: CYNTHIA, origin: 'Platinum', levels: {easy: 100, hard: 100}, foe: "The foe's ", skin: 'dppt', place: 'Sinnoh League', mechanics: 'Gen IV'},
+    zinnia: {id: 'zinnia', name: 'Zinnia', title: 'Lorekeeper Zinnia', gen: 6, randFormat: 'gen6randombattle', format: 'gen6customgame',
+      team: ZINNIA_TEAM, origin: 'Omega Ruby and Alpha Sapphire', levels: {easy: 100, hard: 100}, foe: 'The opposing ', skin: 'oras', place: 'Sky Pillar', mechanics: 'Gen VI'},
   };
   const dexes = {};
   const dexFor = (gen) => dexes[gen] || (dexes[gen] = Dex.forGen(gen));
