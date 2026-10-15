@@ -262,11 +262,10 @@ Poppy · Olivia · Lacey · Lucian
 
 1. **Better music.** Richer original compositions (more voices, drums, a theme per opponent and per generation), crossfades between battle and pinch themes, and sound effects per move category.
 2. **Sprites and art.** Replace the stat glyphs with real Pokémon visuals. Open question: this needs art the project has the rights to use, either original pixel art or a properly licensed sprite source. Until then, improve the glyphs with per-type textures and idle animation.
-3. **Draft mode (idea).** Pick 1 of 3 Pokémon six times, using the same daily candidates for everyone.
-4. **Smarter AI.** Two-turn search with pruning, and a better evaluation of setup, hazards and speed control. Tune it against a benchmark suite (`tools/`).
-5. **Elite Four: Pokémon Champions-style Megas.** Mega Evolution for both the player and the Elite Four. Tera and Z-Moves stay off. See ROADMAP.md for the open questions.
-6. **Leaderboards and sharing.** Optional global stats per day: how many people cleared, the average turns, and which Elite Four member stops the most players.
-7. **More opponents.** Other champions, each in their own generation's rules.
+3. **Smarter AI.** Two-turn search with pruning, and a better evaluation of setup, hazards and speed control. Tune it against a benchmark suite (`tools/`).
+4. **More opponents.** Other champions, each in their own generation's rules.
+
+**Later, not scheduled:** Champions-style Megas in the Elite Four (player and opponents), draft mode, leaderboards. See ROADMAP.md.
 
 ## 12. Open questions
 

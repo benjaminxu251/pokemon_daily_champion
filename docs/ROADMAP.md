@@ -27,12 +27,22 @@ Reference: [Daily Red Game](https://dailyredgame.org/), the project that inspire
 - Player character art, male and female, for the protagonist of each opponent's game: Lucas/Dawn (Cynthia), Brendan/May (Zinnia) and Florian/Juliana (Elite Four). It appears in the encounter intro facing the champion, and as the back view when sending out Pokémon. This uses original art under the same licensing requirement.
 - Champion encounter intro, like the games: a transition into the battle, the champion's entrance and intro line, then their lead Pokémon sent out. Each battle style gets its own version. This uses original art under the same licensing requirement.
 
-## Draft mode
+## Smarter AI
 
-- Pick 1 of 3 Pokémon six times, with the same daily candidates for everyone.
-- Show the candidates one round at a time, so each pick is a commitment.
+- Two-turn search with pruning. Keep the decision under about 1 second on a mid-range phone.
+- Better evaluation of setup moves, hazards, speed control and choice-locking.
+- A benchmark suite in `tools/` with fixed seeds, to track AI strength over time.
 
-## Elite Four: Pokémon Champions-style Megas
+## More opponents
+
+- More champions, each under their own generation's rules and UI skin.
+- More Elite Four members and Champions as new games add them.
+
+## Later
+
+Not scheduled. Kept here so the design notes aren't lost.
+
+### Elite Four: Pokémon Champions-style Megas
 
 - Bring Mega Evolution into the Elite Four, in the style of Pokémon Champions, for both the player and the Elite Four members.
 - This replaces today's no-Mega rule for the Elite Four. Terastallization and Z-Moves stay off.
@@ -41,18 +51,12 @@ Reference: [Daily Red Game](https://dailyredgame.org/), the project that inspire
   - Do trainers whose ace has a Mega (Gengar, Gyarados, Salamence, Metagross, Gallade and others) always Mega Evolve their ace?
   - Is it one Mega per battle per side?
 
-## Smarter AI
+### Draft mode
 
-- Two-turn search with pruning. Keep the decision under about 1 second on a mid-range phone.
-- Better evaluation of setup moves, hazards, speed control and choice-locking.
-- A benchmark suite in `tools/` with fixed seeds, to track AI strength over time.
+- Pick 1 of 3 Pokémon six times, with the same daily candidates for everyone.
+- Show the candidates one round at a time, so each pick is a commitment.
 
-## Leaderboards and stats
+### Leaderboards and stats
 
 - Optional global daily stats: clear rate, average turns, and which Elite Four member stops the most players.
 - This needs a small backend or a serverless store. Keep the game itself fully static.
-
-## More opponents
-
-- More champions, each under their own generation's rules and UI skin.
-- More Elite Four members and Champions as new games add them.
