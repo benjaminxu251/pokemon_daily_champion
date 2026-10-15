@@ -91,7 +91,7 @@ Where Champion Daily differs:
 The pool has 39 trainers covering 15 types: Ghost, Ice, Fighting, Dragon, Psychic, Poison, Dark, Steel, Water, Bug, Ground, Fire, Rock, Flying and Fairy.
 
 Each trainer keeps their original type theme and their signature ace.
-- Lance uses his HeartGold/SoulSilver team identity: Dragon type, Dragonite ace.
+- Lance uses his signature lineup instead of a daily type draw: Gyarados, Aerodactyl and Charizard from his HeartGold/SoulSilver team, plus Salamence and Garchomp from his rematch team. Dragonite is his ace. They use Showdown Gen 9 sets; Aerodactyl has no Gen 9 set, so it gets a hand-built one.
 - Some aces aren't the trainer's type. For example, Lacey's ace is Excadrill and Drayton's is Archaludon. The ace is kept anyway.
 
 **Trainer teams**

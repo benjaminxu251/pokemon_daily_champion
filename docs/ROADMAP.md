@@ -51,5 +51,4 @@ Reference: [Daily Red Game](https://dailyredgame.org/), the project that inspire
 ## Open questions
 
 - Zinnia: should she get Aster (Whismur) as a sixth Pokémon? Aster never battles in the games.
-- Lance in the Elite Four: should he use a specific later-game team, for example from Pokémon Masters EX?
 - Streaks: should they count consecutive days played, or only consecutive wins?

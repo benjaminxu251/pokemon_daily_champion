@@ -16,7 +16,7 @@
   const S = Object.assign({stats: {}, runs: {}, music: {vol: 0.5, speed: 'normal'}, lib: [], style: 'default'}, readKey(KEY) || {});
   // Bump RULES whenever teams, levels or battle rules change. A saved battle is a replayed choice log,
   // so an unfinished run from older rules would replay into a different battle; it restarts instead.
-  const RULES = 2;
+  const RULES = 3;
   for (const [k, r] of Object.entries(S.runs)) {
     const finished = r.result || r.status === 'won' || r.status === 'lost';
     if (!finished && r.rules !== RULES) { delete S.runs[k]; S.staleCleared = true; }
@@ -776,7 +776,7 @@
         <h2>Rules</h2>
         <ul>
           <li>Gen 9 battle rules from Pokémon Showdown's battle engine. No Terastallization, Mega Evolution or Z-Moves.</li>
-          <li>Each trainer keeps their type and signature ace. The rest of their six is a fresh Gen 9 Random Battle draw of that type each day, legendaries excluded.</li>
+          <li>Each trainer keeps their type and signature ace. The rest of their six is a fresh Gen 9 Random Battle draw of that type each day, legendaries excluded. Lance is the exception: he brings his signature lineup (Gyarados, Aerodactyl, Charizard, Salamence, Garchomp).</li>
           <li>Four separate battles. Your team is fully healed between them. A loss ends today's run and records who stopped you.</li>
           <li>Every trainer plays to win with the same search AI as Cynthia and Zinnia.</li>
         </ul>

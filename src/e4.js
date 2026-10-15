@@ -67,7 +67,12 @@
     Drapion: {item: 'Leftovers', ability: 'Sniper', nature: 'Adamant', moves: ['Swords Dance', 'Knock Off', 'Poison Jab', 'Earthquake'], evs: PHYS},
     Barbaracle: {item: 'White Herb', ability: 'Tough Claws', nature: 'Adamant', moves: ['Shell Smash', 'Stone Edge', 'Liquidation', 'Cross Chop'], evs: PHYS},
     Aegislash: {item: 'Leftovers', ability: 'Stance Change', nature: 'Quiet', moves: ['King\'s Shield', 'Shadow Ball', 'Flash Cannon', 'Shadow Sneak'], evs: EV({hp: 252, spa: 252, atk: 4})},
+    Aerodactyl: {item: 'Focus Sash', ability: 'Unnerve', nature: 'Jolly', moves: ['Stealth Rock', 'Stone Edge', 'Earthquake', 'Dual Wingbeat'], evs: PHYS},
   };
+  // Trainers whose signature lineup replaces the daily type draw (the ace is still added last).
+  // Lance: his classic HeartGold/SoulSilver core (Gyarados, Aerodactyl, Charizard) plus the Dragons
+  // from his rematch team. His real teams were never mostly Dragon type.
+  const FIXED = {lance: ['Gyarados', 'Aerodactyl', 'Charizard', 'Salamence', 'Garchomp']};
 
   function rng(str) {
     let h = 2166136261;
@@ -102,7 +107,11 @@
     });
     const r = rng('e4pool|' + day + '|' + m.id);
     const out = [], bases = new Set([aceBase]);
-    for (const id of shuffle(pool, r)) {
+    const handSet = (sp) => Object.assign({name: dex9.species.get(sp).baseSpecies, species: sp, ivs: IV, level: 100}, HAND[sp]);
+    for (const sp of FIXED[m.id] || []) {
+      out.push(g.randomSets[dex9.species.get(sp).id] ? clean(g.randomSet(sp, {}, out.length === 0)) : handSet(sp));
+    }
+    for (const id of FIXED[m.id] ? [] : shuffle(pool, r)) {
       if (out.length === 5) break;
       const sp = dex9.species.get(id);
       if (bases.has(sp.baseSpecies)) continue;
@@ -111,7 +120,7 @@
     let ace;
     const aceId = dex9.species.get(m.ace).id;
     if (g.randomSets[aceId]) ace = clean(g.randomSet(m.ace, {}, false));
-    else ace = Object.assign({name: aceBase, species: m.ace, ivs: IV, level: 100}, HAND[m.ace]);
+    else ace = handSet(m.ace);
     out.push(ace);
     return Core.withLevels(out);
   }
