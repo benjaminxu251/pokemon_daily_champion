@@ -38,12 +38,14 @@ styles.css          all styles (one section per battle skin)
 src/
   core.js           teams, champions, battle setup, battle text
   e4.js             Elite Four pool, daily lineup, team generator
+  art.js            original Pokémon art, generated per species
+  scenes.js         battle backgrounds and player trainers
   ai.js             opponent search AI
   ai-worker.js      runs the AI off the main thread
   app.js            UI: menus, lobbies, battle screen, settings, audio
 vendor/sim.js       Pokémon Showdown engine bundle (prebuilt)
 build/              rebuilds vendor/sim.js
-tools/              headless AI benchmarks
+tools/              headless AI benchmarks; art.html is a gallery of every Pokémon's art
 docs/PRD.md         product requirements: what the game is and why
 docs/ROADMAP.md     planned work
 ```
@@ -97,6 +99,7 @@ node tools/ko-check.js                 # does the AI take obvious last-Pokémon 
 - Battle engine: [@pkmn/sim](https://github.com/pkmn/ps), from the [Pokémon Showdown](https://github.com/smogon/pokemon-showdown) simulator (MIT).
 - Random Battle sets: @pkmn/randoms (MIT).
 - Font: Pixelify Sans (SIL Open Font License), loaded from Google Fonts.
+- Pokémon art, backgrounds and trainers: original, drawn in code.
 - Music and sound: original chiptunes generated in the browser.
 
 See [THIRD_PARTY.md](THIRD_PARTY.md).

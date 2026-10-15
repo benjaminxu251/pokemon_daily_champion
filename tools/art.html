@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Art gallery</title>
+<style>
+  body { background: #2a2740; color: #ddd; font: 11px sans-serif; margin: 8px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 4px; }
+  figure { margin: 0; width: 92px; text-align: center; background: #3a3655; border-radius: 6px; padding: 2px; }
+  figcaption { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+<div class="grid" id="g"></div>
+<script src="../vendor/sim.js"></script>
+<script src="../src/core.js"></script>
+<script src="../src/art.js"></script>
+<script>
+  // tools/art.html?gen=9&q=garchomp,spiritomb&back=1&from=0&n=120
+  const q = new URLSearchParams(location.search);
+  const gen = +(q.get('gen') || 9), dex = Core.dexFor(gen);
+  let names = q.get('q') ? q.get('q').split(',') : Object.keys(Core.generator('gen' + gen + 'randombattle').randomSets);
+  const from = +(q.get('from') || 0), n = +(q.get('n') || 120);
+  names = names.slice(from, from + n);
+  document.getElementById('g').innerHTML = names.map((s) => {
+    const sp = dex.species.get(s);
+    return `<figure>${Art.draw(s, dex, 88, {back: q.get('back') === '1'})}<figcaption>${sp.name} · ${Art.planOf(sp, dex)}</figcaption></figure>`;
+  }).join('');
+</script>
+</body>
+</html>

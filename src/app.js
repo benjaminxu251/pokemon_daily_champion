@@ -3,9 +3,7 @@
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 
-  const TYPE_COLOR = {Normal: '#a8a77a', Fire: '#e8742f', Water: '#4f8fe6', Electric: '#e8c330', Grass: '#5fb046', Ice: '#78cfd0', Fighting: '#c03a2e',
-    Poison: '#9a46a8', Ground: '#d2ad5e', Flying: '#8f9be8', Psychic: '#ea5a86', Bug: '#9aad25', Rock: '#b49d3c', Ghost: '#6a5596',
-    Dragon: '#6640e8', Dark: '#6b5548', Steel: '#a5a5c4', Fairy: '#e48ec4', '???': '#68a090'};
+  const TYPE_COLOR = window.Art.TYPE_COLOR;
   const KEY = 'champdaily:v2';
   const OPPS = [C.OPP.cynthia, C.OPP.zinnia];
 
@@ -30,7 +28,8 @@
   // Player character: the protagonist of the opponent's game, by chosen gender.
   const PROTAG = {cynthia: {male: 'Lucas', female: 'Dawn'}, zinnia: {male: 'Brendan', female: 'May'}, e4: {male: 'Florian', female: 'Juliana'}};
   const protagFor = (o) => (PROTAG[o.member || o.id === 'e4' ? 'e4' : o.id] || PROTAG.cynthia)[S.player === 'female' ? 'female' : 'male'];
-  const styleNote = (o) => '<button class="btn tiny ghost style-note" data-style-open>Battle style: ' + SKIN_LABEL[skinFor(o)] + (S.style === 'default' ? ' (default)' : '') + ' · Playing as ' + protagFor(o) + '</button>';
+  const protagArt = (o, view, size) => window.Scenes.trainer(protagFor(o).toLowerCase(), view, size);
+  const styleNote = (o) => '<button class="btn tiny ghost style-note" data-style-open>' + protagArt(o, 'front', 30) + 'Battle style: ' + SKIN_LABEL[skinFor(o)] + (S.style === 'default' ? ' (default)' : '') + ' · Playing as ' + protagFor(o) + '</button>';
   S.music.slots = Object.assign({}, DEFAULT_SLOTS, S.music.slots);
   if (!readKey(KEY)) { // carry over records from the first version
     const old = readKey('champdaily:v1');
@@ -44,29 +43,8 @@
   let D = C.dexFor(4);
   function setOpp(o) { OPP = o; D = C.dexFor(o.gen); }
 
-  // ---------------- glyph: base-stat radar in type colors ----------------
-  let gid = 0;
-  function glyph(species, size, opts = {}) {
-    const sp = (opts.dex || D).species.get(species);
-    const bs = sp.baseStats;
-    const order = ['hp', 'atk', 'def', 'spe', 'spd', 'spa'];
-    const cx = 50, cy = 50;
-    const pts = order.map((k, i) => {
-      const a = -Math.PI / 2 + i * Math.PI / 3;
-      const r = 14 + 32 * Math.min(bs[k], 160) / 160;
-      return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-    });
-    const c1 = TYPE_COLOR[sp.types[0]], c2 = TYPE_COLOR[sp.types[1] || sp.types[0]];
-    const id = 'g' + (gid++);
-    const ring = order.map((k, i) => { const a = -Math.PI / 2 + i * Math.PI / 3; return `${cx + 46 * Math.cos(a)},${cy + 46 * Math.sin(a)}`; }).join(' ');
-    const mega = sp.isMega ? `<polygon points="${ring}" fill="none" stroke="${c2}" stroke-width="2.5" opacity=".8"/>` : '';
-    return `<svg class="glyph" viewBox="0 0 100 100" width="${size}" height="${size}" aria-label="${esc(sp.name)}" role="img">
-      <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
-      <polygon points="${ring}" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1" stroke-dasharray="2 3"/>${mega}
-      <polygon points="${pts.map((p) => p.join(',')).join(' ')}" fill="url(#${id})" stroke="rgba(10,8,20,.85)" stroke-width="3" stroke-linejoin="round"/>
-      ${opts.back ? '' : '<circle cx="46" cy="44" r="3.4" fill="#111"/><circle cx="60" cy="44" r="3.4" fill="#111"/><circle cx="47" cy="43" r="1.1" fill="#fff"/><circle cx="61" cy="43" r="1.1" fill="#fff"/>'}
-    </svg>`;
-  }
+  // ---------------- Pokémon art (src/art.js) ----------------
+  const glyph = (species, size, opts = {}) => window.Art.draw(species, opts.dex || D, size, Object.assign({fit: !opts.battle}, opts));
   const typeChip = (t) => `<span class="type" style="--tc:${TYPE_COLOR[t]}">${t}</span>`;
   const itemName = (x) => x ? D.items.get(x).name : 'None';
   const abilName = (x) => D.abilities.get(x).name;
@@ -81,7 +59,7 @@
     victory: {label: 'Victory jingle', bpm: 150, loop: false, lead: [19, 19, 19, 24, null, 22, 24, null, 27, 26, 24, 26, 31, null, null, null], bass: [0, 7, 5, 7, 3, 7, 0, null]},
     defeat: {label: 'Defeat jingle', bpm: 80, loop: false, lead: [15, 14, 12, 10, 9, null, 7, null, 5, null, null, null], bass: [0, null, -2, null, -5, null]},
   };
-  const SLOT_LABEL = {menu: 'Menus', battle_cynthia: 'Cynthia battle', battle_zinnia: 'Zinnia battle', battle_e4: 'Elite Four battle', pinch: 'Her last Pokémon', victory: 'Victory', defeat: 'Defeat'};
+  const SLOT_LABEL = {menu: 'Menus', battle_cynthia: 'Cynthia battle', battle_zinnia: 'Zinnia battle', battle_e4: 'Elite Four battle', pinch: "Opponent's last Pokémon", victory: 'Victory', defeat: 'Defeat'};
   const LOOPS = {menu: true, battle_cynthia: true, battle_zinnia: true, battle_e4: true, pinch: true, victory: false, defeat: false};
 
   const Music = (() => {
@@ -356,6 +334,8 @@
   async function enterBattle(resumed) {
     show('battle');
     $('.device').dataset.skin = skinFor(OPP);
+    const bg = $('#scene .bg'); if (bg) bg.remove();
+    $('#scene').insertAdjacentHTML('afterbegin', window.Scenes.background(OPP, OPP.member && TYPE_COLOR[OPP.member.type]));
     $('#btn-foe').textContent = `${OPP.name}'s team`;
     $('#bt-mode').textContent = `${G.mode === 'daily' ? 'Day ' + C.dayNumber(today) : 'Practice'} · ${G.kind === 'e4' ? `Elite Four ${G.e4.stage + 1}/4 · ` : ''}${protagFor(OPP)} vs ${OPP.name}`;
     for (const s of ['p1', 'p2']) { $(`#box-${s}`).hidden = true; $(`#mon-${s}`).innerHTML = ''; }
@@ -370,8 +350,15 @@
     } else {
       Music.play(battleSlot(OPP), true);
       $('#touch').innerHTML = '';
+      $('#mon-p1').innerHTML = protagArt(OPP, 'back', 130);
+      $('#mon-p1').classList.add('enter');
       await typeText(`${protagFor(OPP)} is challenged by ${OPP.title}!`);
       await wait(400);
+      $('#mon-p1').classList.remove('enter');
+      $('#mon-p1').classList.add('leave');
+      await wait(350);
+      $('#mon-p1').classList.remove('leave');
+      $('#mon-p1').innerHTML = '';
       await runEvents(evs);
     }
     G.busy = false;
@@ -402,7 +389,7 @@
       const d = G.disp[side];
       const slot = $(`#mon-${side}`);
       if (!d.species) { slot.innerHTML = ''; continue; }
-      slot.innerHTML = glyph(d.species, side === 'p1' ? 150 : 118, {back: side === 'p1'});
+      slot.innerHTML = glyph(d.species, side === 'p1' ? 150 : 118, {back: side === 'p1', battle: true});
       slot.className = 'battler ' + side + (d.fainted ? ' fainted' : '') + (!instant ? ' enter' : '');
       const box = $(`#box-${side}`);
       box.hidden = false;
@@ -893,6 +880,7 @@
       <div class="foe-head"><h2 id="set-h">Settings</h2><button class="btn tiny ghost" id="set-x">Close</button></div>
       <h3>Display</h3>
       <div class="set-row"><label for="player">Player</label><select id="player"><option value="male">Male</option><option value="female" ${S.player === 'female' ? 'selected' : ''}>Female</option></select></div>
+      <div class="set-trainers" id="set-trainers"></div>
       <div class="set-row"><label for="style">Battle style</label><select id="style">${Object.entries(STYLES).map(([k, v]) => `<option value="${k}" ${S.style === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
       <h3>Sound</h3>
       <div class="set-row"><label for="mute">Mute everything</label><input type="checkbox" id="mute" ${S.music.muted ? 'checked' : ''}></div>
@@ -914,7 +902,9 @@
     $('#vol').oninput = (e) => { Music.setVol(+e.target.value); save(); };
     $('#sfx').onchange = (e) => { S.music.sfx = e.target.checked; save(); };
     $('#spd').onchange = (e) => { S.music.speed = e.target.value; save(); };
-    $('#player').onchange = (e) => { S.player = e.target.value; save(); if (G) $('#bt-mode').textContent = $('#bt-mode').textContent.replace(/\S+ vs /, protagFor(OPP) + ' vs '); };
+    const drawTrainers = () => { $('#set-trainers').innerHTML = [C.OPP.cynthia, C.OPP.zinnia, {id: 'e4'}].map((o) => `<figure>${protagArt(o, 'front', 64)}<figcaption>${protagFor(o)}</figcaption></figure>`).join(''); };
+    drawTrainers();
+    $('#player').onchange = (e) => { S.player = e.target.value; save(); drawTrainers(); if (G) $('#bt-mode').textContent = $('#bt-mode').textContent.replace(/\S+ vs /, protagFor(OPP) + ' vs '); };
     $('#style').onchange = (e) => { S.style = e.target.value; save(); if (G) $('.device').dataset.skin = skinFor(OPP); };
     M.querySelectorAll('select[data-k]').forEach((sel) => sel.onchange = () => { S.music.slots[sel.dataset.k] = sel.value; save(); if (currentMusicSlot() === sel.dataset.k) resume(); });
     M.querySelectorAll('[data-preview]').forEach((b) => b.onclick = () => { Music.unlock(); Music.preview(S.music.slots[b.dataset.preview]); });

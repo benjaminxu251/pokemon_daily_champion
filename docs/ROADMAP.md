@@ -13,18 +13,18 @@ Reference: [Daily Red Game](https://dailyredgame.org/), the project that inspire
 
 ## Sprites and art
 
-- Replace the stat glyphs with real Pokémon visuals. This needs art we have the rights to ship: commissioned or original pixel art, or a sprite source with a license that allows redistribution.
-- Until then, improve the glyphs: per-type textures, idle animation, and attack and faint animations.
+- Pokémon art is generated in code (`src/art.js`). Next: more body-plan overrides so more species read correctly, hand-drawn art for the opponents' signature Pokémon (Cynthia's and Zinnia's teams, Elite Four aces), and attack and faint animations.
+- Any art we ship must be original or under a license that allows redistribution.
 - Trainer portraits for the lobby and the battle intro, with the same licensing requirement.
 - Full battle UI art for every battle style:
-  - battle backgrounds and platforms
+  - battle backgrounds and platforms (first pass done: one drawn location per opponent)
   - the option select menu (Fight, Bag, Pokémon, Run)
   - the move menu
   - the Pokémon-remaining indicators (party balls)
   - the HP and level displays
   - the text box
   - the party and summary screens
-- Player character art, male and female, for the protagonist of each opponent's game: Lucas/Dawn (Cynthia), Brendan/May (Zinnia) and Florian/Juliana (Elite Four). It appears in the encounter intro facing the champion, and as the back view when sending out Pokémon. This uses original art under the same licensing requirement.
+- Player character art: a first pass is done, with original outfits for Lucas/Dawn, Brendan/May and Florian/Juliana in `src/scenes.js`. It appears as a back view in the battle intro, in the lobby and in Settings. Next: a send-out animation, and the champion facing the player in the intro.
 - Champion encounter intro, like the games: a transition into the battle, the champion's entrance and intro line, then their lead Pokémon sent out. Each battle style gets its own version. This uses original art under the same licensing requirement.
 
 ## Smarter AI

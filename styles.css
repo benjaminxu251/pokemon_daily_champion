@@ -404,7 +404,7 @@ body[data-opp="e4"] .mon.is-lead { border-color: var(--e4); }
 .device[data-skin="sv"] .ball.out { background: #b9b2cc; }
 .device[data-skin="sv"] #textbox { background: rgba(28,22,44,.88); color: #fff; border: 0; box-shadow: none; border-radius: 14px; font-family: var(--body); font-weight: 600; }
 .device[data-skin="sv"] #touch { background: #231d33; }
-.device[data-skin="sv"] .t-fight { border-radius: 999px; margin: 4px 6%; background: linear-gradient(90deg, #ff6a3d, #f2a33a); box-shadow: 0 0 0 2px #fff; font-family: var(--body); font-weight: 800; text-shadow: none; }
+.device[data-skin="sv"] .t-fight { border-radius: 48px; margin: 4px 6%; background: linear-gradient(90deg, #ff6a3d, #f2a33a); box-shadow: 0 0 0 2px #fff; font-family: var(--body); font-weight: 800; text-shadow: none; }
 .device[data-skin="sv"] .t-small, .device[data-skin="sv"] .t-back, .device[data-skin="sv"] .t-go { font-family: var(--body); border-radius: 999px; box-shadow: 0 0 0 2px #fff; }
 .device[data-skin="sv"] .t-bag { background: #c9a63a; } .device[data-skin="sv"] .t-run { background: #4a7de0; } .device[data-skin="sv"] .t-mon { background: #3fae74; }
 .device[data-skin="sv"] .mv { border-radius: 999px; background: var(--tc); box-shadow: 0 0 0 2px #fff; font-family: var(--body); padding: 6px 14px; }
@@ -441,6 +441,20 @@ body[data-opp="e4"] .mon.is-lead { border-color: var(--e4); }
   .device #touch > .moves, .device #touch > .party { grid-auto-rows: 1fr; min-height: 0; }
   .device .bt-bar { grid-column: 1 / -1; grid-row: 2; margin: 0; }
   .moves { gap: 10px; } .party { gap: 8px; }
+  .device #touch:has(> .t-fight) { grid-template-rows: minmax(0, 1fr) auto; }
+  .device #touch > .t-fight { align-self: center; height: min(100%, 11rem); }
 }
 
 .foot { max-width: 960px; margin: 24px auto 0; font-size: 12px; color: var(--muted); }
+
+/* ---------- drawn backgrounds (src/scenes.js) and player trainers ---------- */
+#scene > .bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+#scene:has(> .bg)::before, #scene:has(> .bg)::after, #scene:has(> .bg) .plat { display: none; }
+.device:is([data-skin="gen3"], [data-skin="dppt"]) .bg { shape-rendering: crispEdges; }
+.battler .trainer { display: block; width: 62%; height: auto; margin: 0 auto; }
+.battler.leave { animation: leave .35s ease-in forwards; }
+@keyframes leave { to { transform: translateX(-120%); opacity: 0; } }
+.style-note { display: inline-flex; align-items: center; gap: 6px; }
+.style-note .trainer { width: 18px; height: 30px; margin-block: -6px; }
+.set-trainers { display: flex; gap: 14px; justify-content: center; }
+.set-trainers figure { margin: 0; display: grid; justify-items: center; gap: 2px; font-size: 12px; color: var(--muted); }

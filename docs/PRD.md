@@ -169,7 +169,7 @@ Poppy · Olivia · Lacey · Lucian
 - Settings, shown as a modal.
 
 **Main menu**
-- Each card shows the generation badge, location, the opponent's team glyphs (or today's four Elite Four trainers with their types), today's status and a button to battle.
+- Each card shows the generation badge, location, the opponent's team art (or today's four Elite Four trainers with their types), today's status and a button to battle.
 
 **Lobby**
 - Today's player team, with lead selection.
@@ -193,7 +193,7 @@ Poppy · Olivia · Lacey · Lucian
 - Keyboard: keys 1–4 pick moves, Esc closes panels.
 
 **Pokémon visuals**
-- Each Pokémon is drawn as an original "stat glyph": a hexagon shaped by its base stats and filled with its type colors. Mega forms get an outline ring. No official sprites are used.
+- Each Pokémon is drawn with original art generated in code (`src/art.js`). Its egg groups pick a body plan (four-legged, upright, bird, fish, serpent and so on), its Pokédex color and types set the palette, its types add features (flames, wings, fins, crystals, horns), and its height sets the size. A table of overrides fixes species whose egg groups give the wrong shape. Mega forms get a colored halo. The player's Pokémon is drawn mirrored without a face, as a back view. No official sprites are used. `tools/art.html` shows a gallery of every species.
 
 **Battle style**
 - Players pick the battle screen's look in Settings before entering a battle. Each lobby shows the current style next to the start button, and tapping it opens Settings.
@@ -203,7 +203,11 @@ Poppy · Olivia · Lacey · Lucian
   - **Gen 4:** the DPPt-style skin.
   - **Gen 6:** the ORAS-style skin.
 - The style is cosmetic only. Rules and battle text still follow the opponent's generation.
-- Gen 3 and Gen 4 draw the glyphs with hard pixel edges.
+- Gen 3 and Gen 4 draw the Pokémon art with hard pixel edges.
+
+**Backgrounds and trainers** (`src/scenes.js`, original, drawn in code)
+- The background is the opponent's location, whatever the style: a champion's chamber for Cynthia, the Sky Pillar summit for Zinnia, and a league stadium for the Elite Four with the court in the member's type color.
+- The player's trainer (Lucas/Dawn, Brendan/May, Florian/Juliana, by the Player setting) appears from behind during the battle intro, then steps away as the lead Pokémon is sent out. The lobby's style button and Settings show the trainer from the front.
 
 **Responsive**
 - Phones (portrait): the screens stack. The device is sized to fit the viewport height.
@@ -254,14 +258,14 @@ Poppy · Olivia · Lacey · Lucian
 
 ## 10. Constraints and decisions
 
-- **No official assets in the shipped build.** Official sprites, music and trainer art belong to Nintendo, Creatures and GAME FREAK. Daily Red Game uses sprites from the PokeAPI repository, but those carry no license for the art itself. Champion Daily uses original glyphs, original music and a user-supplied audio library instead.
+- **No official assets in the shipped build.** Official sprites, music and trainer art belong to Nintendo, Creatures and GAME FREAK. Daily Red Game uses sprites from the PokeAPI repository, but those carry no license for the art itself. Champion Daily uses original generated art, original music and a user-supplied audio library instead.
 - **Fixed champion teams:** Cynthia and Zinnia use their real in-game teams every day. This is faithful, but the teams are public and the same every day, so players can plan counters. The Elite Four's daily variety offsets this.
 - **One difficulty:** Easy and Hard were removed. Player teams use Showdown's balance levels rather than a flat Lv100, so each day's team is about equally strong.
 
 ## 11. Roadmap
 
 1. **Better music.** Richer original compositions (more voices, drums, a theme per opponent and per generation), crossfades between battle and pinch themes, and sound effects per move category.
-2. **Sprites and art.** Replace the stat glyphs with real Pokémon visuals. Open question: this needs art the project has the rights to use, either original pixel art or a properly licensed sprite source. Until then, improve the glyphs with per-type textures and idle animation.
+2. **Sprites and art.** Improve the generated Pokémon art: more body-plan overrides, hand-drawn art for the opponents' signature Pokémon, and attack and faint animations. Any other art must be original or properly licensed.
 3. **Smarter AI.** Two-turn search with pruning, and a better evaluation of setup, hazards and speed control. Tune it against a benchmark suite (`tools/`).
 4. **More opponents.** Other champions, each in their own generation's rules.
 
