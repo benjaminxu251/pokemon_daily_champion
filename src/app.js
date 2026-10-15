@@ -12,7 +12,7 @@
   // ---------------- storage ----------------
   function readKey(k) { try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage blocked */ } }
-  const DEFAULT_SLOTS = {menu: 'b:menu', battle_cynthia: 'b:hall', battle_zinnia: 'b:sky', pinch: 'b:pinch', victory: 'b:victory', defeat: 'b:defeat'};
+  const DEFAULT_SLOTS = {menu: 'b:menu', battle_cynthia: 'b:hall', battle_zinnia: 'b:sky', battle_e4: 'b:league', pinch: 'b:pinch', victory: 'b:victory', defeat: 'b:defeat'};
   const S = Object.assign({stats: {}, runs: {}, music: {vol: 0.5, speed: 'normal'}, lib: []}, readKey(KEY) || {});
   S.music.slots = Object.assign({}, DEFAULT_SLOTS, S.music.slots);
   if (!readKey(KEY)) { // carry over records from the first version
@@ -59,12 +59,13 @@
     menu: {label: 'Champion Daily menu', bpm: 92, loop: true, lead: [12, null, 15, 19, 17, null, 15, 12, 10, null, 12, 15, 14, null, null, null, 12, null, 15, 19, 22, null, 20, 19, 17, 15, 14, 15, 12, null, null, null], bass: [0, 0, 7, 7, 5, 5, 3, 3]},
     hall: {label: 'Champion\'s Hall', bpm: 170, loop: true, lead: [24, 22, 19, 22, 24, 27, 26, 24, 22, 19, 17, 19, 22, null, 19, null, 24, 22, 19, 22, 24, 27, 29, 31, 29, 27, 26, 24, 22, 24, null, null], bass: [0, 12, 0, 12, 0, 12, 0, 12, -2, 10, -2, 10, -4, 8, -2, 10]},
     sky: {label: 'Pillar Wind', bpm: 154, loop: true, lead: [19, 23, 26, 23, 28, 26, 23, 21, 19, null, 21, 23, 26, null, null, null, 24, 26, 28, 31, 30, 28, 26, 24, 23, 24, 26, 23, 19, null, 21, null], bass: [-2, 10, -2, 10, 3, 15, 3, 15, 5, 17, 5, 17, 0, 12, 2, 14]},
+    league: {label: 'League Gauntlet', bpm: 182, loop: true, lead: [17, 20, 24, 20, 25, 24, 20, 17, 15, 17, 20, null, 22, 20, 17, null, 17, 20, 24, 27, 29, 27, 24, 22, 20, 22, 24, 22, 20, 17, 15, null], bass: [0, 12, 0, 12, 3, 15, 3, 15, 5, 17, 5, 17, 7, 19, 7, 19]},
     pinch: {label: 'Last Stand', bpm: 196, loop: true, lead: [27, 26, 24, 26, 27, 31, 27, 26, 24, 22, 24, 26, 27, null, 31, null, 32, 31, 29, 27, 26, 27, 29, 31, 34, 32, 31, 29, 27, 26, 24, null], bass: [0, 0, 12, 0, 1, 1, 13, 1]},
     victory: {label: 'Victory jingle', bpm: 150, loop: false, lead: [19, 19, 19, 24, null, 22, 24, null, 27, 26, 24, 26, 31, null, null, null], bass: [0, 7, 5, 7, 3, 7, 0, null]},
     defeat: {label: 'Defeat jingle', bpm: 80, loop: false, lead: [15, 14, 12, 10, 9, null, 7, null, 5, null, null, null], bass: [0, null, -2, null, -5, null]},
   };
-  const SLOT_LABEL = {menu: 'Menus', battle_cynthia: 'Cynthia battle', battle_zinnia: 'Zinnia battle', pinch: 'Her last Pokémon', victory: 'Victory', defeat: 'Defeat'};
-  const LOOPS = {menu: true, battle_cynthia: true, battle_zinnia: true, pinch: true, victory: false, defeat: false};
+  const SLOT_LABEL = {menu: 'Menus', battle_cynthia: 'Cynthia battle', battle_zinnia: 'Zinnia battle', battle_e4: 'Elite Four battle', pinch: 'Her last Pokémon', victory: 'Victory', defeat: 'Defeat'};
+  const LOOPS = {menu: true, battle_cynthia: true, battle_zinnia: true, battle_e4: true, pinch: true, victory: false, defeat: false};
 
   const Music = (() => {
     let ctx = null, gain = null, cur = null, curSlot = null, el = null, timer = null;
@@ -178,7 +179,7 @@
     }
     return {play, preview, stop, setVol, addTrack, delTrack, blip, get slot() { return curSlot; }, unlock: ensureCtx};
   })();
-  const battleSlot = (o) => 'battle_' + o.id;
+  const battleSlot = (o) => (o.member ? 'battle_e4' : 'battle_' + o.id);
   function currentMusicSlot() {
     const v = document.body.dataset.view;
     if (v === 'battle' && G && !G.b.ended) return G.b.p2.pokemon.filter((p) => !p.fainted).length === 1 ? 'pinch' : battleSlot(OPP);
@@ -189,9 +190,14 @@
   const today = C.dateKey();
   const diff = 'hard'; // single mode: Lv100
   const teams = {}, foes = {};
-  const teamFor = (o) => teams[o.id] || (teams[o.id] = C.playerTeam(today, o));
-  const foeFor = (o) => foes[o.id] || (foes[o.id] = C.oppTeam(today, o));
-  const leads = {cynthia: 0, zinnia: 0};
+  const teamFor = (o) => {
+    if (o.member || o.id === 'e4') return teams.e4 || (teams.e4 = C.playerTeam(today, E4.PLAYER));
+    return teams[o.id] || (teams[o.id] = C.playerTeam(today, o));
+  };
+  const foeFor = (o) => foes[o.id] || (foes[o.id] = o.member ? E4.team(today, o.member) : C.oppTeam(today, o));
+  const leads = {cynthia: 0, zinnia: 0, e4: 0};
+  const LINEUP = E4.lineup(today);
+  const E4KEY = `${today}:e4`;
   let G = null;
   const runKey = (o = OPP, d = diff) => `${today}:${o.id}:${d}`;
   const dName = (d) => (d === 'easy' ? 'Easy' : 'Hard');
@@ -203,7 +209,7 @@
     $('#battle').hidden = view !== 'battle';
     $('#about').hidden = view !== 'about';
     document.body.dataset.view = view;
-    document.body.dataset.opp = view === 'home' ? '' : OPP.id;
+    document.body.dataset.opp = view === 'home' ? '' : (OPP.member || OPP.id === 'e4' ? 'e4' : OPP.id);
     window.scrollTo(0, 0);
   }
 
@@ -228,9 +234,9 @@
           <div class="chips">${chips}</div>
           <button class="btn gold" data-go="${o.id}">Battle ${o.name}</button>
         </article>`;
-      }).join('')}</div>
+      }).join('')}${e4Card()}</div>
       <p class="foot-note">New teams in <b class="countdown">--:--:--</b></p>`;
-    $('#home').querySelectorAll('[data-go]').forEach((b) => b.onclick = () => { Music.blip(); openLobby(C.OPP[b.dataset.go]); });
+    $('#home').querySelectorAll('[data-go]').forEach((b) => b.onclick = () => { Music.blip(); if (b.dataset.go === 'e4') openE4(); else openLobby(C.OPP[b.dataset.go]); });
     tick();
   }
   function goHome() { G = null; show('home'); renderHome(); Music.play('menu'); }
@@ -334,7 +340,7 @@
     show('battle');
     $('.device').dataset.skin = OPP.skin;
     $('#btn-foe').textContent = `${OPP.name}'s team`;
-    $('#bt-mode').textContent = `${G.mode === 'daily' ? 'Day ' + C.dayNumber(today) : 'Practice'} · ${OPP.name}`;
+    $('#bt-mode').textContent = `${G.mode === 'daily' ? 'Day ' + C.dayNumber(today) : 'Practice'} · ${G.kind === 'e4' ? `Elite Four ${G.e4.stage + 1}/4 · ` : ''}${OPP.name}`;
     for (const s of ['p1', 'p2']) { $(`#box-${s}`).hidden = true; $(`#mon-${s}`).innerHTML = ''; }
     G.busy = true;
     const evs = C.toEvents(G.b.log, OPP);
@@ -576,6 +582,7 @@
   }
 
   function finish() {
+    if (G.kind === 'e4') return e4Finish();
     const b = G.b;
     const won = b.winner === 'You';
     const hpList = (side) => b[side].pokemon.slice().sort((x, y) => x.position - y.position).map((p) => [p.species.name, p.fainted ? 0 : Math.max(1, Math.round(100 * p.hp / p.maxhp))]);
@@ -687,6 +694,175 @@
   $('#btn-foe').onclick = () => openFoeTeam(true);
   $('#box-p2').onclick = () => openFoeTeam(true);
   $('#balls-p2').onclick = () => openFoeTeam(true);
+
+  // ---------------- Elite Four ----------------
+  const E4_OPP = {id: 'e4', name: 'Elite Four', gen: 9};
+  function e4Run() { return S.runs[E4KEY]; }
+  function e4Card() {
+    const r = e4Run();
+    const st = !r ? 'open' : r.status === 'won' ? 'win' : r.status === 'lost' ? 'loss' : 'live';
+    const label = !r ? 'Open' : r.status === 'won' ? 'Cleared' : r.status === 'lost' ? `Lost to ${LINEUP[r.lostAt].name}` : `Battle ${r.stage + 1} of 4`;
+    setOpp(E4.asOpp(LINEUP[0]));
+    return `<article class="opp-card" data-o="e4">
+      <div class="opp-top"><span class="gen-badge">Gen IX</span><span class="opp-place">Today's lineup</span></div>
+      <h2>Elite Four</h2>
+      <ol class="e4-mini">${LINEUP.map((m) => `<li>${glyph(m.ace, 30)}<span>${m.role === 'Champion' ? 'Champion ' : ''}${m.name}</span>${typeChip(m.type)}</li>`).join('')}</ol>
+      <p class="opp-desc">Four type specialists from every generation, back to back. One team, healed between fights. Gen 9 rules with no Tera, Mega or Z-Moves.</p>
+      <div class="chips"><span class="chip ${st}">Today <b>${label}</b></span></div>
+      <button class="btn gold" data-go="e4">Take on the Elite Four</button>
+    </article>`;
+  }
+  function openE4() { setOpp(E4.asOpp(LINEUP[0])); OPP = Object.assign({}, OPP, {member: null, id: 'e4'}); setOpp(OPP); show('lobby'); renderE4(); Music.play('menu'); }
+  function renderE4() {
+    const r = e4Run();
+    const st = stat('e4', 'run');
+    const team = teamFor(E4_OPP);
+    const lead = r ? r.lead : leads.e4;
+    const stageOf = (i) => {
+      if (!r) return i === 0 ? 'next' : 'ahead';
+      if (r.status === 'lost' && r.lostAt === i) return 'lost';
+      if (i < r.stage || r.status === 'won') return 'beat';
+      if (r.status === 'live' && i === r.stage) return 'next';
+      return 'ahead';
+    };
+    const stLabel = {beat: 'Defeated', lost: 'Beat you', next: 'Up next', ahead: ''};
+    const cta = !r ? '<button class="btn gold" id="e4-start">Start the Elite Four</button>'
+      : r.status === 'live' ? `<button class="btn gold" id="e4-start">Resume: battle ${r.stage + 1} vs ${LINEUP[r.stage].name}</button>`
+      : `<button class="btn gold" id="e4-result">See result</button><button class="btn" id="e4-practice">${r.status === 'lost' ? 'Continue in practice' : 'Practice run'}</button>`;
+    $('#lobby').innerHTML = `
+      <button class="back" id="btn-back">← All opponents</button>
+      <section class="hero">
+        <p class="eyebrow">Day ${C.dayNumber(today)} · Gen IX rules · Lv100</p>
+        <h1 class="opp-h">Elite <em>Four</em></h1>
+        <p class="lede">Four type specialists drawn from every region, the same for everyone today. Beat all four with one team. Lose once and today's run is over, but you can keep going in practice.</p>
+        <div class="cta-row">${cta}</div>
+        <dl class="stats">
+          <div><dt>Cleared</dt><dd>${st.w}</dd></div><div><dt>Fell</dt><dd>${st.l}</dd></div>
+          <div><dt>Streak</dt><dd>${st.streak}</dd></div><div><dt>Best</dt><dd>${st.best}</dd></div>
+          <div><dt>New lineup in</dt><dd class="countdown">--:--:--</dd></div>
+        </dl>
+      </section>
+      <section>
+        <div class="sec-h"><h2>Today's lineup</h2><p>One trainer per type, in battle order.</p></div>
+        <ol class="e4-list">${LINEUP.map((m, i) => `<li class="e4-row ${stageOf(i)}">
+          <span class="e4-n">${i + 1}</span>
+          <span class="e4-g">${glyph(m.ace, 52)}</span>
+          <span class="e4-b"><b>${m.title}</b><span class="e4-meta">${typeChip(m.type)} Ace ${esc(m.ace.replace('-Midnight', ' (Midnight)').replace('-Alola', ' (Alolan)'))} · ${m.from}</span></span>
+          <span class="e4-s">${stLabel[stageOf(i)]}</span>
+          <button class="btn tiny" data-view="${i}">Team</button></li>`).join('')}</ol>
+      </section>
+      <section>
+        <div class="sec-h"><h2>Your team</h2><p>${r ? 'Locked in for today. Fully healed before every fight.' : 'One Gen 9 Random Battle team for all four fights. Tap a Pokémon to lead.'}</p></div>
+        <div class="grid" id="team">${(r ? reorder(team, r.lead) : team).map((s, i) => monCard(s, i, {lead: r ? i === 0 : i === lead, static: !!r})).join('')}</div>
+      </section>
+      <section class="rules">
+        <h2>Rules</h2>
+        <ul>
+          <li>Gen 9 mechanics from Pokémon Showdown's battle engine. No Terastallization, Mega Evolution or Z-Moves.</li>
+          <li>Each trainer keeps their type and signature ace. The rest of their six is a fresh Gen 9 Random Battle draw of that type each day, legendaries excluded.</li>
+          <li>Four separate battles. Your team is fully healed between them. A loss ends today's run and records who stopped you.</li>
+          <li>Every trainer plays to win with the same search AI as Cynthia and Zinnia.</li>
+        </ul>
+      </section>`;
+    $('#btn-back').onclick = () => { Music.blip(500); goHome(); };
+    if (!r) $('#lobby').querySelectorAll('#team .mon').forEach((b) => b.onclick = () => { leads.e4 = +b.dataset.i; Music.blip(660); renderE4(); });
+    $('#lobby').querySelectorAll('[data-view]').forEach((b) => b.onclick = () => { setOpp(E4.asOpp(LINEUP[+b.dataset.view])); openFoeTeam(false); });
+    const s1 = $('#e4-start'); if (s1) s1.onclick = () => {
+      let run = e4Run();
+      if (!run) { run = S.runs[E4KEY] = {lead: leads.e4, stage: 0, status: 'live', fights: [], day: today, lineup: LINEUP.map((m) => m.id)}; save(); }
+      startE4Fight(run, 'daily');
+    };
+    const r1 = $('#e4-result'); if (r1) r1.onclick = () => e4Summary(r, 'daily');
+    const p1 = $('#e4-practice'); if (p1) p1.onclick = () => startE4Practice(r);
+    tick();
+  }
+  function startE4Practice(r) {
+    const run = {lead: r ? r.lead : leads.e4, stage: r && r.status === 'lost' ? r.lostAt : 0, status: 'live', fights: [], practice: true};
+    startE4Fight(run, 'practice');
+  }
+  function startE4Fight(run, mode) {
+    Music.unlock();
+    const m = LINEUP[run.stage];
+    setOpp(E4.asOpp(m));
+    const foe = foeFor(OPP);
+    const fight = run.fights[run.stage] || (run.fights[run.stage] = {log: []});
+    const seed = mode === 'daily' ? today : 'practice-' + Date.now();
+    const b = C.newBattle(seed, teamFor(OPP), run.lead, 100, OPP, foe);
+    C.replay(b, fight.log);
+    G = {b, mode, kind: 'e4', run: fight, e4: run, foe, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
+    enterBattle(fight.log.length > 0);
+  }
+  function e4Finish() {
+    const b = G.b, run = G.e4, won = b.winner === 'You';
+    const hpList = (side) => b[side].pokemon.slice().sort((x, y) => x.position - y.position).map((p) => [p.species.name, p.fainted ? 0 : Math.max(1, Math.round(100 * p.hp / p.maxhp))]);
+    Music.play(won ? 'victory' : 'defeat', true);
+    const already = !!G.run.result;
+    if (!already) {
+      Object.assign(G.run, {result: won ? 'win' : 'loss', turns: b.turn, mine: hpList('p1'), foe: hpList('p2'), member: LINEUP[run.stage].id});
+      if (!won) { run.status = 'lost'; run.lostAt = run.stage; }
+      else if (run.stage === 3) run.status = 'won';
+      else run.stage++;
+      if (G.mode === 'daily') {
+        if (run.status !== 'live') {
+          const st = stat('e4', 'run');
+          if (run.status === 'won') { st.w++; st.streak++; st.best = Math.max(st.best, st.streak); } else { st.l++; st.streak = 0; }
+          st.lastDay = today;
+        }
+        save();
+      }
+    }
+    say(won ? `You defeated ${OPP.title}!` : 'You are out of usable Pokémon!');
+    $('#touch').innerHTML = `<button class="t-fight" id="t-res"><span>${won ? 'Victory' : 'Defeat'}</span><small>Continue</small></button>`;
+    const next = () => e4After(won);
+    $('#t-res').onclick = next;
+    setTimeout(() => { if (document.body.dataset.view === 'battle' && G && G.b === b) next(); }, 1800);
+  }
+  function e4After(won) {
+    const run = G.e4, mode = G.mode, beaten = OPP;
+    if (run.status !== 'live') return e4Summary(run, mode);
+    const nxt = LINEUP[run.stage];
+    const M = $('#modal');
+    M.innerHTML = `<div class="sheet result" role="dialog" aria-modal="true" aria-labelledby="e4i-h">
+      <p class="eyebrow">${mode === 'daily' ? 'Elite Four' : 'Practice'} · Battle ${run.stage} of 4 cleared</p>
+      <h2 id="e4i-h">${beaten.name} defeated</h2>
+      <p>Your team has been fully healed. Next up: <b>${nxt.title}</b>, ${nxt.type} type.</p>
+      <div class="e4-next">${glyph(nxt.ace, 56)}<div><b>${nxt.title}</b><div>${typeChip(nxt.type)} Ace ${esc(nxt.ace)}</div></div></div>
+      <div class="cta-row"><button class="btn gold" id="e4-go">Battle ${nxt.name}</button><button class="btn ghost" id="e4-back">Back to lineup</button></div>
+    </div>`;
+    M.hidden = false;
+    $('#e4-go').onclick = () => { M.hidden = true; startE4Fight(run, mode); };
+    $('#e4-back').onclick = () => { M.hidden = true; G = null; openE4(); };
+  }
+  function e4Share(run) {
+    const sq = LINEUP.map((m, i) => (run.status === 'won' || i < (run.status === 'lost' ? run.lostAt : run.stage)) ? '🟩' : (run.status === 'lost' && i === run.lostAt) ? '🟥' : '⬛').join('');
+    return `Champion Daily #${C.dayNumber(today)} · Elite Four\n${sq} ${run.status === 'won' ? 'Cleared all four' : `Stopped by ${LINEUP[run.lostAt].name} (${run.lostAt + 1}/4)`}\n${LINEUP.map((m) => m.name).join(' · ')}`;
+  }
+  function e4Summary(run, mode) {
+    const M = $('#modal');
+    const txt = mode === 'daily' ? e4Share(run) : null;
+    const lost = run.status === 'lost';
+    M.innerHTML = `<div class="sheet result" role="dialog" aria-modal="true" aria-labelledby="e4s-h">
+      <p class="eyebrow">${mode === 'daily' ? 'Day ' + C.dayNumber(today) : 'Practice'} · Elite Four</p>
+      <h2 id="e4s-h">${run.status === 'won' ? 'Elite Four cleared' : `${LINEUP[run.lostAt].name} stopped you`}</h2>
+      <p>${run.status === 'won' ? 'You beat all four with one team.' : `You fell in battle ${run.lostAt + 1} of 4.`}</p>
+      <ol class="e4-list compact">${LINEUP.map((m, i) => { const f = run.fights[i]; const s = f && f.result ? (f.result === 'win' ? 'beat' : 'lost') : 'ahead';
+        return `<li class="e4-row ${s}"><span class="e4-n">${i + 1}</span><span class="e4-g">${glyph(m.ace, 36)}</span><span class="e4-b"><b>${m.title}</b><span class="e4-meta">${typeChip(m.type)}${f && f.turns ? ` ${f.turns} turns` : ''}</span></span><span class="e4-s">${s === 'beat' ? 'Defeated' : s === 'lost' ? 'Beat you' : ''}</span></li>`; }).join('')}</ol>
+      ${txt ? `<pre class="share" id="share-t">${esc(txt)}</pre>` : ''}
+      <div class="cta-row">
+        ${txt ? '<button class="btn gold" id="btn-copy">Copy result</button>' : ''}
+        ${lost ? '<button class="btn" id="e4-cont">Continue in practice</button>' : '<button class="btn" id="e4-cont">Practice run</button>'}
+        <button class="btn ghost" id="e4-lobby">Back to lineup</button>
+      </div></div>`;
+    M.hidden = false;
+    const cp = $('#btn-copy');
+    if (cp) cp.onclick = () => {
+      navigator.clipboard.writeText(txt).then(() => { cp.textContent = 'Copied'; }).catch(() => {
+        const r = document.createRange(); r.selectNodeContents($('#share-t')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); cp.textContent = 'Selected, copy it';
+      });
+    };
+    $('#e4-cont').onclick = () => { M.hidden = true; startE4Practice(run.practice ? Object.assign({}, run, {lostAt: run.lostAt}) : run); };
+    $('#e4-lobby').onclick = () => { M.hidden = true; G = null; openE4(); };
+  }
 
   // ---------------- settings ----------------
   function sourceOptions(sel) {
