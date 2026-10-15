@@ -715,8 +715,8 @@
     return `<article class="opp-card" data-o="e4">
       <div class="opp-top"><span class="gen-badge">Gen IX</span><span class="opp-place">Today's lineup</span></div>
       <h2>Elite Four</h2>
-      <ol class="e4-mini">${LINEUP.map((m) => `<li>${glyph(m.ace, 30)}<span>${m.role === 'Champion' ? 'Champion ' : ''}${m.name}</span>${typeChip(m.type)}</li>`).join('')}</ol>
-      <p class="opp-desc">Four type specialists from every generation, back to back. One team, healed between fights. Gen 9 rules with no Tera, Mega or Z-Moves.</p>
+      <ol class="e4-mini">${LINEUP.map((m) => `<li>${glyph(m.ace, 30)}<span>${m.role === 'Champion' ? 'Champion ' : ''}${m.label}</span>${typeChip(m.type)}</li>`).join('')}</ol>
+      <p class="opp-desc">Four type specialists from every generation, back to back. One team, healed between fights. Gen 9 battle rules with no Tera, Mega or Z-Moves.</p>
       <div class="chips"><span class="chip ${st}">Today <b>${label}</b></span></div>
       <button class="btn gold" data-go="e4">Take on the Elite Four</button>
     </article>`;
@@ -741,7 +741,7 @@
     $('#lobby').innerHTML = `
       <button class="back" id="btn-back">← All opponents</button>
       <section class="hero">
-        <p class="eyebrow">Day ${C.dayNumber(today)} · Gen IX rules · Lv100</p>
+        <p class="eyebrow">Day ${C.dayNumber(today)} · Gen 9 battle rules · Lv100</p>
         <h1 class="opp-h">Elite <em>Four</em></h1>
         <p class="lede">Four type specialists drawn from every region, the same for everyone today. Beat all four with one team. Lose once and today's run is over, but you can keep going in practice.</p>
         <div class="cta-row">${cta}${styleNote(E4.asOpp(LINEUP[0]))}</div>
@@ -756,7 +756,7 @@
         <ol class="e4-list">${LINEUP.map((m, i) => `<li class="e4-row ${stageOf(i)}">
           <span class="e4-n">${i + 1}</span>
           <span class="e4-g">${glyph(m.ace, 52)}</span>
-          <span class="e4-b"><b>${m.title}</b><span class="e4-meta">${typeChip(m.type)} Ace ${esc(m.ace.replace('-Midnight', ' (Midnight)').replace('-Alola', ' (Alolan)'))} · ${m.from}</span></span>
+          <span class="e4-b"><b>${m.titleGen}</b><span class="e4-meta">${typeChip(m.type)} Ace ${esc(m.ace.replace('-Midnight', ' (Midnight)').replace('-Alola', ' (Alolan)'))} · ${m.from}</span></span>
           <span class="e4-s">${stLabel[stageOf(i)]}</span>
           <button class="btn tiny" data-view="${i}">Team</button></li>`).join('')}</ol>
       </section>
@@ -767,7 +767,7 @@
       <section class="rules">
         <h2>Rules</h2>
         <ul>
-          <li>Gen 9 mechanics from Pokémon Showdown's battle engine. No Terastallization, Mega Evolution or Z-Moves.</li>
+          <li>Gen 9 battle rules from Pokémon Showdown's battle engine. No Terastallization, Mega Evolution or Z-Moves.</li>
           <li>Each trainer keeps their type and signature ace. The rest of their six is a fresh Gen 9 Random Battle draw of that type each day, legendaries excluded.</li>
           <li>Four separate battles. Your team is fully healed between them. A loss ends today's run and records who stopped you.</li>
           <li>Every trainer plays to win with the same search AI as Cynthia and Zinnia.</li>
@@ -834,8 +834,8 @@
     M.innerHTML = `<div class="sheet result" role="dialog" aria-modal="true" aria-labelledby="e4i-h">
       <p class="eyebrow">${mode === 'daily' ? 'Elite Four' : 'Practice'} · Battle ${run.stage} of 4 cleared</p>
       <h2 id="e4i-h">${beaten.name} defeated</h2>
-      <p>Your team has been fully healed. Next up: <b>${nxt.title}</b>, ${nxt.type} type.</p>
-      <div class="e4-next">${glyph(nxt.ace, 56)}<div><b>${nxt.title}</b><div>${typeChip(nxt.type)} Ace ${esc(nxt.ace)}</div></div></div>
+      <p>Your team has been fully healed. Next up: <b>${nxt.titleGen}</b>, ${nxt.type} type.</p>
+      <div class="e4-next">${glyph(nxt.ace, 56)}<div><b>${nxt.titleGen}</b><div>${typeChip(nxt.type)} Ace ${esc(nxt.ace)}</div></div></div>
       <div class="cta-row"><button class="btn gold" id="e4-go">Battle ${nxt.name}</button><button class="btn ghost" id="e4-back">Back to lineup</button></div>
     </div>`;
     M.hidden = false;
@@ -844,7 +844,7 @@
   }
   function e4Share(run) {
     const sq = LINEUP.map((m, i) => (run.status === 'won' || i < (run.status === 'lost' ? run.lostAt : run.stage)) ? '🟩' : (run.status === 'lost' && i === run.lostAt) ? '🟥' : '⬛').join('');
-    return `Champion Daily #${C.dayNumber(today)} · Elite Four\n${sq} ${run.status === 'won' ? 'Cleared all four' : `Stopped by ${LINEUP[run.lostAt].name} (${run.lostAt + 1}/4)`}\n${LINEUP.map((m) => m.name).join(' · ')}`;
+    return `Champion Daily #${C.dayNumber(today)} · Elite Four\n${sq} ${run.status === 'won' ? 'Cleared all four' : `Stopped by ${LINEUP[run.lostAt].name} (${run.lostAt + 1}/4)`}\n${LINEUP.map((m) => m.label).join(' · ')}`;
   }
   function e4Summary(run, mode) {
     const M = $('#modal');
@@ -855,7 +855,7 @@
       <h2 id="e4s-h">${run.status === 'won' ? 'Elite Four cleared' : `${LINEUP[run.lostAt].name} stopped you`}</h2>
       <p>${run.status === 'won' ? 'You beat all four with one team.' : `You fell in battle ${run.lostAt + 1} of 4.`}</p>
       <ol class="e4-list compact">${LINEUP.map((m, i) => { const f = run.fights[i]; const s = f && f.result ? (f.result === 'win' ? 'beat' : 'lost') : 'ahead';
-        return `<li class="e4-row ${s}"><span class="e4-n">${i + 1}</span><span class="e4-g">${glyph(m.ace, 36)}</span><span class="e4-b"><b>${m.title}</b><span class="e4-meta">${typeChip(m.type)}${f && f.turns ? ` ${f.turns} turns` : ''}</span></span><span class="e4-s">${s === 'beat' ? 'Defeated' : s === 'lost' ? 'Beat you' : ''}</span></li>`; }).join('')}</ol>
+        return `<li class="e4-row ${s}"><span class="e4-n">${i + 1}</span><span class="e4-g">${glyph(m.ace, 36)}</span><span class="e4-b"><b>${m.titleGen}</b><span class="e4-meta">${typeChip(m.type)}${f && f.turns ? ` ${f.turns} turns` : ''}</span></span><span class="e4-s">${s === 'beat' ? 'Defeated' : s === 'lost' ? 'Beat you' : ''}</span></li>`; }).join('')}</ol>
       ${txt ? `<pre class="share" id="share-t">${esc(txt)}</pre>` : ''}
       <div class="cta-row">
         ${txt ? '<button class="btn gold" id="btn-copy">Copy result</button>' : ''}

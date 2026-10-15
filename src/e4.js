@@ -5,6 +5,8 @@
   const dex9 = Dex.forGen(9);
 
   // [id, name, role, type, ace, from]
+  const GEN_OF = {'Red and Blue': 1, 'Gold and Silver': 2, 'HeartGold and SoulSilver': 4, 'Ruby and Sapphire': 3, 'Emerald': 3, 'Diamond and Pearl': 4, 'Platinum': 4,
+    'Black and White': 5, 'Black 2 and White 2': 5, 'X and Y': 6, 'Sun and Moon': 7, 'Ultra Sun and Ultra Moon': 7, 'Scarlet and Violet': 9, 'The Indigo Disk': 9};
   const MEMBERS = [
     ['agatha', 'Agatha', 'Elite Four', 'Ghost', 'Gengar', 'Red and Blue'],
     ['lorelei', 'Lorelei', 'Elite Four', 'Ice', 'Lapras', 'Red and Blue'],
@@ -22,7 +24,7 @@
     ['aaron', 'Aaron', 'Elite Four', 'Bug', 'Drapion', 'Diamond and Pearl'],
     ['bertha', 'Bertha', 'Elite Four', 'Ground', 'Hippowdon', 'Diamond and Pearl'],
     ['flint', 'Flint', 'Elite Four', 'Fire', 'Infernape', 'Diamond and Pearl'],
-    ['lucian', 'Lucian', 'Elite Four', 'Psychic', 'Gallade', 'Platinum'],
+    ['lucian', 'Lucian', 'Elite Four', 'Psychic', 'Gallade', 'Diamond and Pearl'],
     ['shauntal', 'Shauntal', 'Elite Four', 'Ghost', 'Chandelure', 'Black and White'],
     ['grimsley', 'Grimsley', 'Elite Four', 'Dark', 'Bisharp', 'Black and White'],
     ['caitlin', 'Caitlin', 'Elite Four', 'Psychic', 'Gothitelle', 'Black and White'],
@@ -45,7 +47,11 @@
     ['amarys', 'Amarys', 'Elite Four', 'Steel', 'Metagross', 'The Indigo Disk'],
     ['lacey', 'Lacey', 'Elite Four', 'Fairy', 'Excadrill', 'The Indigo Disk'],
     ['drayton', 'Drayton', 'Elite Four', 'Dragon', 'Archaludon', 'The Indigo Disk'],
-  ].map(([id, name, role, type, ace, from]) => ({id, name, role, type, ace, from, title: `${role} ${name}`}));
+  ].map(([id, name, role, type, ace, from]) => {
+    // generation the trainer debuted in (Lance's team comes from HGSS, but he debuted in Gen 1)
+    const gen = id === 'lance' ? 1 : GEN_OF[from];
+    return {id, name, role, type, ace, from, gen, title: `${role} ${name}`, label: `${name} (Gen ${gen})`, titleGen: `${role} ${name} (Gen ${gen})`};
+  });
 
   // Aces without a Gen 9 Random Battle set get a hand-built one.
   const IV = {hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31};
