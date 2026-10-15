@@ -1,0 +1,15 @@
+{
+  "name": "champion-daily-engine",
+  "private": true,
+  "description": "Builds vendor/sim.js: Pokémon Showdown's simulator (@pkmn/sim) plus Random Battle sets (@pkmn/randoms) as one browser script.",
+  "scripts": {
+    "build:engine": "esbuild entry.mjs --bundle --minify --keep-names --format=iife --platform=browser --outfile=../vendor/sim.js"
+  },
+  "dependencies": {
+    "@pkmn/randoms": "0.10.11",
+    "@pkmn/sim": "0.10.11"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
