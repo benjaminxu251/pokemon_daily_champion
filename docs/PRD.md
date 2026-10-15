@@ -257,7 +257,7 @@ Poppy · Olivia · Lacey · Lucian
 - Mute everything.
 - Music volume.
 - Menu sounds on/off.
-- Text speed: normal or fast.
+- Battle speed: Normal, Fast or Fastest. It scales text, pauses, HP drain, battle animations and the end-of-battle delay; Fastest also skips the encounter intro. The ⏩ button beside ♪ Music cycles it mid-battle (1×, 2×, 4×).
 
 **Music** (Settings → Music)
 - **Battle theme:** Default, or any track below for every battle. Default plays each opponent's own theme: Cynthia's "Battle! Champion" (Diamond & Pearl), "Battle! Zinnia" (ORAS), and for each Elite Four member their debut generation's Elite Four music (Gen 1–3 Elite Fours used the Gym Leader theme; Blueberry League members get theirs from The Indigo Disk).

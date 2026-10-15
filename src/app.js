@@ -525,7 +525,7 @@
       Music.play('battle', true);
       $('#touch').innerHTML = '';
       const accent = OPP.member ? TYPE_COLOR[OPP.member.type] : {cynthia: '#c9a24e', zinnia: '#3fb8b0', factory: '#58b878'}[OPP.id];
-      await window.Intro.play($('#scene'), {skin: skinFor(OPP), opp: oppArt(OPP, 160) || '<div class="in-sil"></div>', player: protagArt(OPP, 'front', 160),
+      if (S.music.speed !== 'fastest') await window.Intro.play($('#scene'), {skin: skinFor(OPP), opp: oppArt(OPP, 160) || '<div class="in-sil"></div>', player: protagArt(OPP, 'front', 160),
         name: OPP.name, role: OPP.title.replace(OPP.name, '').trim(), playerName: protagFor(OPP), accent});
       const intro = [$('#mon-p1'), $('#mon-p2')];
       intro[0].innerHTML = protagArt(OPP, 'back', 130);
@@ -595,7 +595,7 @@
     const from = +(el.dataset.v || to);
     el.dataset.v = to;
     if (instant || from === to) { el.textContent = `${to}/${max}`; return; }
-    const t0 = performance.now(), dur = 550;
+    const t0 = performance.now(), dur = 550 * spd().k;
     const step = (t) => { const k = Math.min(1, (t - t0) / dur); el.textContent = `${Math.round(from + (to - from) * k)}/${max}`; if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
   }
@@ -711,17 +711,24 @@
 
   // text box
   let skip = null;
-  const wait = (ms) => new Promise((r) => { const t = setTimeout(r, ms); skip = () => { clearTimeout(t); r(); }; });
+  // Battle speed: text per character, hold after each line, and a multiplier for every other pause and animation.
+  const SPEEDS = {normal: {label: 'Normal', btn: '1×', char: 16, hold: 620, k: 1}, fast: {label: 'Fast', btn: '2×', char: 6, hold: 260, k: 0.5}, fastest: {label: 'Fastest', btn: '4×', char: 0, hold: 110, k: 0.22}};
+  const spd = () => SPEEDS[S.music.speed] || SPEEDS.normal;
+  function applySpeed() {
+    document.documentElement.style.setProperty('--spd', spd().k);
+    const b = $('#btn-speed'); b.textContent = '⏩ ' + spd().btn; b.title = 'Battle speed: ' + spd().label;
+  }
+  const wait = (ms) => new Promise((r) => { const t = setTimeout(r, ms * spd().k); skip = () => { clearTimeout(t); r(); }; });
   function say(t) { $('#textbox-t').textContent = t; }
   async function typeText(t) {
     const el = $('#textbox-t');
-    const fast = S.music.speed === 'fast';
-    let fin = false;
+    const sp = spd();
+    let fin = !sp.char;
     skip = () => { fin = true; el.textContent = t; };
     el.textContent = '';
-    for (let i = 0; i < t.length && !fin; i++) { el.textContent = t.slice(0, i + 1); await new Promise((r) => setTimeout(r, fast ? 6 : 16)); }
+    for (let i = 0; i < t.length && !fin; i++) { el.textContent = t.slice(0, i + 1); await new Promise((r) => setTimeout(r, sp.char)); }
     el.textContent = t;
-    await wait(fast ? 260 : 620);
+    await wait(sp.hold / sp.k);
   }
   async function runEvents(evs) {
     for (const e of evs) {
@@ -881,7 +888,7 @@
     say(won ? `You defeated ${OPP.title}!` : 'You are out of usable Pokémon!');
     $('#touch').innerHTML = `<button class="t-fight" id="t-res"><span>${won ? 'Victory' : 'Defeat'}</span><small>See result</small></button>`;
     $('#t-res').onclick = () => showResult(G.mode === 'daily' ? G.run : result, G.mode);
-    setTimeout(() => { if (document.body.dataset.view === 'battle' && G) showResult(G.mode === 'daily' ? G.run : result, G.mode); }, 1800);
+    setTimeout(() => { if (document.body.dataset.view === 'battle' && G) showResult(G.mode === 'daily' ? G.run : result, G.mode); }, 1800 * spd().k);
   }
 
   // ---------------- result ----------------
@@ -1108,7 +1115,7 @@
     $('#touch').innerHTML = `<button class="t-fight" id="t-res"><span>${won ? 'Victory' : 'Defeat'}</span><small>Continue</small></button>`;
     const next = () => e4After(won);
     $('#t-res').onclick = next;
-    setTimeout(() => { if (document.body.dataset.view === 'battle' && G && G.b === b) next(); }, 1800);
+    setTimeout(() => { if (document.body.dataset.view === 'battle' && G && G.b === b) next(); }, 1800 * spd().k);
   }
   function e4After(won, beaten = OPP) {
     const run = G.e4, mode = G.mode;
@@ -1294,7 +1301,7 @@
     $('#touch').innerHTML = `<button class="t-fight" id="t-res"><span>${won ? 'Victory' : 'Defeat'}</span><small>${won ? `Streak ${run.n}` : 'Run over'}</small></button>`;
     const next = () => { if (G && G.b === b) { G = null; openFactory(); } };
     $('#t-res').onclick = next;
-    setTimeout(() => { if (document.body.dataset.view === 'battle') next(); }, 2200);
+    setTimeout(() => { if (document.body.dataset.view === 'battle') next(); }, 2200 * spd().k);
   }
 
   // ---------------- settings ----------------
@@ -1332,6 +1339,8 @@
     $('#mus-x').onclick = $('#mus-done').onclick = () => { M.hidden = true; };
   }
   $('#btn-music').onclick = () => { Music.blip(); openMusicPicker(); };
+  $('#btn-speed').onclick = () => { const ks = Object.keys(SPEEDS); S.music.speed = ks[(ks.indexOf(S.music.speed || 'normal') + 1) % ks.length]; save(); applySpeed(); Music.blip(1100); };
+  applySpeed();
   $('#md-change').onclick = () => { if (document.body.dataset.view === 'battle' && G) openMusicPicker(); else openSettings(); };
   function openSettings() {
     const M = $('#modal');
@@ -1346,7 +1355,7 @@
       <div class="set-row"><label for="mute">Mute everything</label><input type="checkbox" id="mute" ${S.music.muted ? 'checked' : ''}></div>
       <div class="set-row"><label for="vol">Music volume</label><input type="range" id="vol" min="0" max="1" step="0.05" value="${S.music.vol}"></div>
       <div class="set-row"><label for="sfx">Menu sounds</label><input type="checkbox" id="sfx" ${S.music.sfx !== false ? 'checked' : ''}></div>
-      <div class="set-row"><label for="spd">Text speed</label><select id="spd"><option value="normal">Normal</option><option value="fast" ${S.music.speed === 'fast' ? 'selected' : ''}>Fast</option></select></div>
+      <div class="set-row"><label for="spd">Battle speed</label><select id="spd">${Object.entries(SPEEDS).map(([k, v]) => `<option value="${k}" ${(S.music.speed || 'normal') === k ? 'selected' : ''}>${v.label}${k === 'fastest' ? ' (skips intros)' : ''}</option>`).join('')}</select></div>
       <h3>Music</h3>
       <div class="set-row slot-row"><label for="m-battle">Battle theme</label><div class="slot-ctl"><select id="m-battle">${sourceOptions(S.music.battle, 'battle')}</select></div></div>
       <p class="note">Default plays Cynthia's theme against Cynthia, Zinnia's against Zinnia, and each Elite Four member's own generation's Elite Four music. Change the track mid-battle with the ♪ Music button.</p>
@@ -1362,7 +1371,7 @@
     $('#mute').onchange = (e) => { S.music.muted = e.target.checked; save(); setMuteBtn(); if (S.music.muted) Music.stop(); else { Music.unlock(); resume(); } };
     $('#vol').oninput = (e) => { Music.setVol(+e.target.value); save(); };
     $('#sfx').onchange = (e) => { S.music.sfx = e.target.checked; save(); };
-    $('#spd').onchange = (e) => { S.music.speed = e.target.value; save(); };
+    $('#spd').onchange = (e) => { S.music.speed = e.target.value; save(); applySpeed(); };
     const drawTrainers = () => { $('#set-trainers').innerHTML = [C.OPP.cynthia, C.OPP.zinnia, {id: 'e4'}].map((o) => `<figure>${protagArt(o, 'front', 64)}<figcaption>${protagFor(o)}</figcaption></figure>`).join(''); };
     drawTrainers();
     $('#player').onchange = (e) => { S.player = e.target.value; save(); drawTrainers(); if (G) $('#bt-mode').textContent = $('#bt-mode').textContent.replace(/\S+ vs /, protagFor(OPP) + ' vs '); };

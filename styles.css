@@ -149,7 +149,7 @@ h2 { font-family: var(--display); font-size: 22px; margin: 0; font-weight: 600; 
 .bx-hp { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
 .bx-hp b { font-size: 9px; background: #4a4a52; color: #f2c53a; padding: 0 3px; border-radius: 2px; }
 .hp-track { flex: 1; height: 6px; background: #4a4a52; border-radius: 3px; padding: 1px; }
-.hp-fill { display: block; height: 100%; border-radius: 2px; width: 100%; background: var(--hp-g); transition: width .55s linear, background-color .2s; }
+.hp-fill { display: block; height: 100%; border-radius: 2px; width: 100%; background: var(--hp-g); transition: width calc(.55s * var(--spd, 1)) linear, background-color .2s; }
 .hp-fill[data-lvl="y"] { background: var(--hp-y); }
 .hp-fill[data-lvl="r"] { background: var(--hp-r); }
 .bx-row2 { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; font-size: clamp(9px, 2.8vw, 12px); font-variant-numeric: tabular-nums; }
@@ -605,3 +605,8 @@ body[data-opp="factory"] .mon.is-lead { border-color: var(--factory); box-shadow
 .fac-sub { margin: 14px 0 6px; font-size: 14px; color: var(--muted); }
 .fac-over { border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; margin-bottom: 8px; }
 .fac-over h2 { margin: 0 0 4px; }
+
+/* battle speed scales the battle animations too */
+.battler.enter, .battler.hit .glyph, .battler.p1.lunge, .battler.p2.lunge, .battler.leave, .battler.intro-in { animation-duration: calc(var(--anim, .45s) * var(--spd, 1)); }
+.battler.hit .glyph { --anim: .5s; } .battler.lunge { --anim: .3s; } .battler.leave { --anim: .35s; } .battler.intro-in { --anim: .55s; }
+.battler { transition-duration: calc(.4s * var(--spd, 1)); }
