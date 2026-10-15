@@ -106,8 +106,10 @@ Each trainer keeps their original type theme and their signature ace.
 **Run structure**
 - Four separate battles in order.
 - Win, and the next trainer is shown with a "your team has been fully healed" interstitial.
+- The player picks their lead before each fight: in the lobby before the first, and on the interstitial (or the lobby) before the rest. Each fight stores its own lead, which locks once that fight's first turn is played.
 - Lose once, and the day's run is over. The record stores who stopped the player and at which battle.
 - After a loss, the player can continue in practice from the fight they lost. After a clear, they can do a practice run. Practice is never recorded.
+- Practice in every mode uses today's team and opens with a lead picker. Each practice battle gets a fresh random seed. Practice is never recorded.
 
 **Records**
 - Runs cleared, runs failed, win streak and best streak.
@@ -193,7 +195,7 @@ Poppy · Olivia · Lacey · Lucian
 - Keyboard: keys 1–4 pick moves, Esc closes panels.
 
 **Pokémon visuals**
-- Each Pokémon is drawn with original art generated in code (`src/art.js`). Its egg groups pick a body plan (four-legged, upright, bird, fish, serpent and so on), its Pokédex color and types set the palette, its types add features (flames, wings, fins, crystals, horns), and its height sets the size. A table of overrides fixes species whose egg groups give the wrong shape. Mega forms get a colored halo. The player's Pokémon is drawn mirrored without a face, as a back view. No official sprites are used. `tools/art.html` shows a gallery of every species.
+- Each Pokémon is drawn with original art generated in code (`src/art.js`). Its egg groups pick a body plan (four-legged, upright, bird, fish, serpent and so on), its Pokédex color and types set the palette, its types add features (flames, wings, fins, crystals, horns), and its height sets the size. A table of overrides fixes species whose egg groups give the wrong shape. Mega forms get a colored halo and a spiked back. Other forms are drawn distinct from their base: a form that adds a type shifts its color toward that type, regional forms get a region pattern (Alolan flower, Galarian stripes, Hisuian rune marks, Paldean band), and the rest get an emblem. The player's Pokémon is drawn mirrored without a face, as a back view. No official sprites are used. `tools/art.html` shows a gallery of every species.
 
 **Battle style**
 - Players pick the battle screen's look in Settings before entering a battle. Each lobby shows the current style next to the start button, and tapping it opens Settings.

@@ -458,3 +458,8 @@ body[data-opp="e4"] .mon.is-lead { border-color: var(--e4); }
 .style-note .trainer { width: 18px; height: 30px; margin-block: -6px; }
 .set-trainers { display: flex; gap: 14px; justify-content: center; }
 .set-trainers figure { margin: 0; display: grid; justify-items: center; gap: 2px; font-size: 12px; color: var(--muted); }
+.lead-h { margin: 4px 0 -4px; font-family: var(--display); font-size: 13px; color: var(--muted); }
+.lead-pick { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.lead-pick button { display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border: 1px solid var(--line); border-radius: 10px; background: var(--night); font-size: 10px; min-width: 0; color: inherit; cursor: pointer; }
+.lead-pick button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lead-pick button[aria-checked="true"] { border-color: var(--gold); background: var(--panel); }

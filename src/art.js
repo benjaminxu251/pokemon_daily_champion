@@ -192,8 +192,19 @@
   }
 
   // ---------- features ----------
-  function features(sp, plan) {
+  // Forms must not look like their base: regional forms get a region pattern, Megas a spiked back,
+  // other forms (Deoxys, Rotom, Gourgeist sizes...) an emblem. Palette shifts are in palette().
+  function formKind(sp, dex) {
+    if (!sp.forme || sp.baseSpecies === sp.name) return null;
+    const m = /^(Alola|Galar|Hisui|Paldea)/.exec(sp.forme);
+    if (m) return m[1].toLowerCase();
+    if (sp.isMega || sp.isPrimal) return 'mega';
+    return 'variant';
+  }
+  function features(sp, plan, dex) {
     const t = new Set(sp.types), f = new Set();
+    const k = formKind(sp, dex);
+    if (k) f.add('form-' + k);
     if (t.has('Fire')) f.add('flame');
     if (t.has('Water') && !['fish', 'serpent', 'invert', 'amphib'].includes(plan)) f.add('fin');
     if (t.has('Electric')) f.add('bolt');
@@ -213,8 +224,13 @@
     return f;
   }
 
-  function palette(sp) {
-    const p = DEX_COLOR[sp.color] || DEX_COLOR.Gray;
+  function palette(sp, dex) {
+    let p = DEX_COLOR[sp.color] || DEX_COLOR.Gray;
+    const base = dex.species.get(sp.baseSpecies);
+    if (sp.forme && base.name !== sp.name && base.color === sp.color && !sp.isMega && !sp.isPrimal) {
+      const added = sp.types.filter((t) => !base.types.includes(t));
+      p = added.length ? mix(p, TYPE_COLOR[added[0]], .45) : (rng(sp.id)() < .5 ? shade(p, .22) : tint(p, .25));
+    }
     const tc = sp.types.map((t) => TYPE_COLOR[t]);
     let s = tc.find((c) => dist(c, p) > 90) || (dist(p, '#ffffff') > 200 ? tint(p, .55) : shade(p, .35));
     return {p, s, d: shade(p, .22), b: sp.color === 'White' ? '#d6d1c7' : tint(p, .5), y: '#f2c94c', types: sp.types};
@@ -231,6 +247,7 @@
       if (f.has('spikes')) for (let i = 0; i < 3; i++) o.push(tri(bx - 10 + i * 8, by + 2 + i * 2, 8, 9, 10 + i * 12, TYPE_COLOR.Rock));
       if (f.has('crystals')) for (let i = 0; i < 3; i++) o.push(tri(bx - 8 + i * 9, by + 3 + i * 2, 6, 12 - i * 2, i * 15, tint(TYPE_COLOR.Ice, .3)));
       if (f.has('fin')) o.push(tri(bx, by + 3, 12, 13, 15, TYPE_COLOR.Water));
+      if (f.has('form-mega')) for (let i = 0; i < 4; i++) o.push(tri(bx - 14 + i * 9, by + 4 + i * 2, 8, 13 - i, -10 + i * 14, c.s));
     }
     if (layer === 'top' && !a.noTop) {
       if (f.has('ears')) { o.push(tri(tx - 7, ty + 4, 9, 11, -18, c.p), tri(tx + 5, ty + 3, 9, 12, 14, c.p)); }
@@ -241,6 +258,12 @@
     if (layer === 'torso') {
       const B = a.body;
       if (f.has('spots')) for (let i = 0; i < 3; i++) o.push(ell(B.x - B.rx * .35 + i * B.rx * .35, B.y - B.ry * .35 + (i % 2) * 5, 3, 2.6, TYPE_COLOR.Poison));
+      const mk = shade(c.p, .45);
+      if (f.has('form-hisui')) for (let i = 0; i < 3; i++) { const x = B.x - B.rx * .45 + i * B.rx * .4, y = B.y - B.ry * .2; o.push(line(`M${f1(x)},${f1(y)} l3,-4 l3,4 l3,-4`, 2, mk)); }
+      if (f.has('form-galar')) for (let i = 0; i < 2; i++) o.push(line(`M${f1(B.x - B.rx * .5 + i * 9)},${f1(B.y + B.ry * .4)} l${f1(B.rx * .35)},${f1(-B.ry * .8)}`, 3, c.s));
+      if (f.has('form-alola')) for (let i = 0; i < 5; i++) { const a2 = i * Math.PI * 2 / 5; o.push(`<circle cx="${f1(B.x + Math.cos(a2) * 3.4)}" cy="${f1(B.y - B.ry * .25 + Math.sin(a2) * 3.4)}" r="2.6" fill="#f7a3c8" stroke-width="1"/>`); }
+      if (f.has('form-paldea')) o.push(`<rect x="${f1(B.x - B.rx * .7)}" y="${f1(B.y - 2)}" width="${f1(B.rx * 1.4)}" height="4" rx="2" fill="${c.s}" stroke-width="1.2"/>`);
+      if (f.has('form-variant')) o.push(poly([[B.x, B.y - B.ry * .45], [B.x + 5, B.y - B.ry * .45 + 6], [B.x, B.y - B.ry * .45 + 12], [B.x - 5, B.y - B.ry * .45 + 6]], c.s));
       if (f.has('plate')) o.push(ell(B.x + B.rx * .25, B.y - B.ry * .1, B.rx * .32, B.ry * .3, tint(TYPE_COLOR.Steel, .25)));
       if (a.tail && f.has('flame')) o.push(flame(a.tail[0], a.tail[1], 9));
       if (a.tail && f.has('bolt') && !f.has('flame')) o.push(poly([[a.tail[0], a.tail[1] - 2], [a.tail[0] + 7, a.tail[1] - 12], [a.tail[0] + 2, a.tail[1] - 11], [a.tail[0] + 8, a.tail[1] - 22], [a.tail[0] - 3, a.tail[1] - 8], [a.tail[0] + 2, a.tail[1] - 9]], TYPE_COLOR.Electric));
@@ -278,7 +301,7 @@
     let inner = cache.get(key);
     if (!inner) {
       const plan = planOf(sp, dex);
-      const c = palette(sp), r = rng(sp.id), f = features(sp, plan);
+      const c = palette(sp, dex), r = rng(sp.id), f = features(sp, plan, dex);
       const L = PLANS[plan](c, r);
       const a = L.a;
       const s = opts.fit ? 1 : Math.max(.58, Math.min(1, .74 + .17 * Math.log2(Math.max(.1, sp.heightm))));

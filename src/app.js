@@ -322,13 +322,38 @@
     G = {b, mode: 'daily', run, foe, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
     enterBattle(run.log.length > 0);
   }
+  // Lead picker shared by the between-fights screen and the practice-start sheet.
+  const leadPickHTML = (team, cur) => `<p class="lead-h">Choose your lead</p>
+      <div class="lead-pick" role="radiogroup" aria-label="Choose your lead">${team.map((s, i) => `<button role="radio" aria-checked="${i === cur}" data-lead="${i}">${glyph(s.species, 40)}<span>${esc(s.species)}</span></button>`).join('')}</div>`;
+  function bindLeadPick(root, onPick) {
+    root.querySelectorAll('[data-lead]').forEach((b) => b.onclick = () => {
+      onPick(+b.dataset.lead); Music.blip(660);
+      root.querySelectorAll('[data-lead]').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+    });
+  }
+  // Practice sheet: pick a lead for the team, then start.
+  function chooseLead(team, cur, eyebrow, title, onGo) {
+    const M = $('#modal');
+    let lead = cur;
+    M.innerHTML = `<div class="sheet result" role="dialog" aria-modal="true" aria-labelledby="lp-h">
+      <p class="eyebrow">${eyebrow}</p><h2 id="lp-h">${title}</h2>
+      ${leadPickHTML(team, cur)}
+      <div class="cta-row"><button class="btn gold" id="lp-go">Start</button><button class="btn ghost" id="lp-cancel">Cancel</button></div></div>`;
+    M.hidden = false;
+    bindLeadPick(M, (i) => { lead = i; });
+    $('#lp-go').onclick = () => { M.hidden = true; onGo(lead); };
+    $('#lp-cancel').onclick = () => { M.hidden = true; };
+  }
   function startPractice() {
-    Music.unlock();
     const seed = 'practice-' + Date.now();
-    const foe = C.oppTeam(seed, OPP);
-    const b = C.newBattle(seed, C.playerTeam(seed, OPP), 0, null, OPP, foe);
-    G = {b, mode: 'practice', run: {log: [], lead: 0, diff, opp: OPP.id}, foe, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
-    enterBattle(false);
+    const team = teamFor(OPP), done = S.runs[runKey()];
+    chooseLead(team, done ? done.lead : leads[OPP.id], 'Practice · ' + OPP.name, "Today's team", (lead) => {
+      Music.unlock();
+      const foe = foeFor(OPP);
+      const b = C.newBattle(seed, team, lead, null, OPP, foe);
+      G = {b, mode: 'practice', run: {log: [], lead, diff, opp: OPP.id}, foe, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
+      enterBattle(false);
+    });
   }
 
   async function enterBattle(resumed) {
@@ -722,6 +747,8 @@
     const st = stat('e4', 'run');
     const team = teamFor(E4_OPP);
     const lead = r ? r.lead : leads.e4;
+    // The lead can change before each fight; a fight's lead is fixed once it starts.
+    const pickable = !r || (r.status === 'live' && !(r.fights[r.stage] && r.fights[r.stage].log.length));
     const stageOf = (i) => {
       if (!r) return i === 0 ? 'next' : 'ahead';
       if (r.status === 'lost' && r.lostAt === i) return 'lost';
@@ -756,20 +783,20 @@
           <button class="btn tiny" data-view="${i}">Team</button></li>`).join('')}</ol>
       </section>
       <section>
-        <div class="sec-h"><h2>Your team</h2><p>${r ? 'Locked in for today. Fully healed before every fight.' : 'One Gen 9 Random Battle team for all four fights. Tap a Pokémon to lead.'}</p></div>
-        <div class="grid" id="team">${(r ? reorder(team, r.lead) : team).map((s, i) => monCard(s, i, {lead: r ? i === 0 : i === lead, static: !!r})).join('')}</div>
+        <div class="sec-h"><h2>Your team</h2><p>${!r ? 'One Gen 9 Random Battle team for all four fights. Tap a Pokémon to lead; you can change your lead before each fight.' : pickable ? `Fully healed before every fight. Tap a Pokémon to lead against ${LINEUP[r.stage].name}.` : 'Locked in for today. Fully healed before every fight.'}</p></div>
+        <div class="grid" id="team">${team.map((s, i) => monCard(s, i, {lead: i === lead, static: !pickable})).join('')}</div>
       </section>
       <section class="rules">
         <h2>Rules</h2>
         <ul>
           <li>Gen 9 battle rules from Pokémon Showdown's battle engine. No Terastallization, Mega Evolution or Z-Moves.</li>
           <li>Each trainer keeps their type and signature ace. The rest of their six is a fresh Gen 9 Random Battle draw of that type each day, with legendaries and Paradox Pokémon excluded. Lance is the exception: he brings his signature lineup (Gyarados, Aerodactyl, Charizard, Salamence, Garchomp).</li>
-          <li>Four separate battles. Your team is fully healed between them. A loss ends today's run and records who stopped you.</li>
+          <li>Four separate battles. Your team is fully healed between them, and you choose your lead before each one. A loss ends today's run and records who stopped you.</li>
           <li>Every trainer plays to win with the same search AI as Cynthia and Zinnia.</li>
         </ul>
       </section>`;
     $('#btn-back').onclick = () => { Music.blip(500); goHome(); };
-    if (!r) $('#lobby').querySelectorAll('#team .mon').forEach((b) => b.onclick = () => { leads.e4 = +b.dataset.i; Music.blip(660); renderE4(); });
+    if (pickable) $('#lobby').querySelectorAll('#team .mon').forEach((b) => b.onclick = () => { if (r) { r.lead = +b.dataset.i; save(); } else leads.e4 = +b.dataset.i; Music.blip(660); renderE4(); });
     $('#lobby').querySelectorAll('[data-view]').forEach((b) => b.onclick = () => { setOpp(E4.asOpp(LINEUP[+b.dataset.view])); openFoeTeam(false); });
     const s1 = $('#e4-start'); if (s1) s1.onclick = () => {
       let run = e4Run();
@@ -781,17 +808,20 @@
     tick();
   }
   function startE4Practice(r) {
-    const run = {lead: r ? r.lead : leads.e4, stage: r && r.status === 'lost' ? r.lostAt : 0, status: 'live', fights: [], practice: true};
-    startE4Fight(run, 'practice');
+    const stage = r && r.status === 'lost' ? r.lostAt : 0;
+    chooseLead(teamFor(E4_OPP), r ? r.lead : leads.e4, 'Practice · Elite Four', `Battle ${stage + 1} vs ${LINEUP[stage].name}`, (lead) => {
+      startE4Fight({lead, stage, status: 'live', fights: [], practice: true}, 'practice');
+    });
   }
   function startE4Fight(run, mode) {
     Music.unlock();
     const m = LINEUP[run.stage];
     setOpp(E4.asOpp(m));
     const foe = foeFor(OPP);
-    const fight = run.fights[run.stage] || (run.fights[run.stage] = {log: []});
+    const fight = run.fights[run.stage] || (run.fights[run.stage] = {log: [], lead: run.lead});
+    if (!fight.log.length) fight.lead = run.lead;
     const seed = mode === 'daily' ? today : 'practice-' + Date.now();
-    const b = C.newBattle(seed, teamFor(OPP), run.lead, null, OPP, foe);
+    const b = C.newBattle(seed, teamFor(OPP), fight.lead ?? run.lead, null, OPP, foe);
     C.replay(b, fight.log);
     G = {b, mode, kind: 'e4', run: fight, e4: run, foe, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
     enterBattle(fight.log.length > 0);
@@ -831,9 +861,11 @@
       <h2 id="e4i-h">${beaten.name} defeated</h2>
       <p>Your team has been fully healed. Next up: <b>${nxt.titleGen}</b>, ${nxt.type} type.</p>
       <div class="e4-next">${glyph(nxt.ace, 56)}<div><b>${nxt.titleGen}</b><div>${typeChip(nxt.type)} Ace ${esc(nxt.ace)}</div></div></div>
+      ${leadPickHTML(teamFor(E4_OPP), run.lead)}
       <div class="cta-row"><button class="btn gold" id="e4-go">Battle ${nxt.name}</button><button class="btn ghost" id="e4-back">Back to lineup</button></div>
     </div>`;
     M.hidden = false;
+    bindLeadPick(M, (i) => { run.lead = i; if (mode === 'daily') save(); });
     $('#e4-go').onclick = () => { M.hidden = true; startE4Fight(run, mode); };
     $('#e4-back').onclick = () => { M.hidden = true; G = null; openE4(); };
   }
