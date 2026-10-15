@@ -90,6 +90,7 @@ node tools/ko-check.js                 # does the AI take obvious last-Pokémon 
 **Opponents:**
 - **Cynthia and Zinnia** use their in-game teams with hand-written competitive sets: 252/252 EV spreads and fitting natures and items.
 - **Elite Four members** use Showdown Gen 9 sets of their type, plus their signature ace.
+- **Opponent levels:** every opponent's team is Lv88 with the ace at Lv92, the games' pattern of one team level plus a stronger ace. That's a few levels above the player's average Showdown level of about 83, so the champion is the favorite. The constant is `OPP_LEVEL` in `src/core.js`.
 
 ## Credits
 

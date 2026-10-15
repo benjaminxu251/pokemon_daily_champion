@@ -197,7 +197,8 @@
 
   // ---------------- daily state ----------------
   const today = C.dateKey();
-  const diff = 'hard'; // single mode: Lv100
+  const diff = 'hard'; // single mode; records are keyed by this
+  const LV = `Lv${C.OPP_LEVEL.team}, ace Lv${C.OPP_LEVEL.ace}`;
   const teams = {}, foes = {};
   const teamFor = (o) => {
     if (o.member || o.id === 'e4') return teams.e4 || (teams.e4 = C.playerTeam(today, E4.PLAYER));
@@ -270,12 +271,11 @@
     const st = stat(o.id, diff);
     const team = teamFor(o), foe = foeFor(o);
     const lead = leads[o.id];
-    const L = o.levels;
     const doneTxt = run && run.result ? (run.result === 'win' ? `You beat ${o.name} today.` : `${o.name} won today.`) : run ? 'Battle in progress.' : '';
     $('#lobby').innerHTML = `
       <button class="back" id="btn-back">← All opponents</button>
       <section class="hero">
-        <p class="eyebrow">Day ${C.dayNumber(today)} · Gen ${o.gen} battle rules · ${o.place} · Lv100</p>
+        <p class="eyebrow">Day ${C.dayNumber(today)} · Gen ${o.gen} battle rules · ${o.place} · ${LV}</p>
         <h1 class="opp-h">${o.title.replace(o.name, `<em>${o.name}</em>`)}</h1>
         <div class="cta-row">
           ${run && run.result
@@ -294,8 +294,8 @@
         <div class="grid" id="team">${(run ? reorder(team, run.lead) : team).map((s, i) => monCard(s, i, {lead: run ? i === 0 : i === lead, static: !!run})).join('')}</div>
       </section>
       <section>
-        <div class="sec-h"><h2>${o.name}'s team</h2><p>Her ${o.origin} team in game order: ${foe[0].species} leads, ${foe[foe.length - 1].species} is the ace. Lv${L[diff]}.</p><button class="btn tiny" id="btn-foe-lobby">Full sets &amp; stats</button></div>
-        <div class="grid">${foe.map((s, i) => monCard(s, i, {static: true, level: L[diff], lead: i === 0, ace: i === foe.length - 1})).join('')}</div>
+        <div class="sec-h"><h2>${o.name}'s team</h2><p>Her ${o.origin} team in game order: ${foe[0].species} leads, ${foe[foe.length - 1].species} is the ace. ${LV}.</p><button class="btn tiny" id="btn-foe-lobby">Full sets &amp; stats</button></div>
+        <div class="grid">${foe.map((s, i) => monCard(s, i, {static: true, lead: i === 0, ace: i === foe.length - 1})).join('')}</div>
       </section>
       <section class="rules">
         <h2>Rules</h2>
@@ -303,7 +303,7 @@
           <li>${o.gen === 4 ? 'Gen 4 battle rules from Pokémon Showdown\'s battle engine: the physical/special split, Gen 4 items, abilities and type chart.' : 'Gen 6 battle rules from Pokémon Showdown\'s battle engine: Fairy type, the updated Steel type, Mega Evolution, Gen 6 abilities and items.'}</li>
           ${o.gen === 6 ? '<li>If your Pokémon holds its Mega Stone, a Mega Evolution button appears in the Fight menu. One Mega per battle.</li>' : ''}
           <li>${o.name} plays to win: every turn she simulates her options against yours in the real engine and picks the strongest. She knows your sets, as you can see hers.</li>
-          <li>Your team: today's Gen ${o.gen} Random Battle sets, all at Lv100. No bag items.</li>
+          <li>Your team: today's Gen ${o.gen} Random Battle sets at Showdown's levels. No bag items.</li>
           <li>Progress saves after every turn. New teams arrive at midnight, your local time.</li>
         </ul>
       </section>`;
@@ -331,7 +331,7 @@
     let run = S.runs[runKey()];
     if (!run) { run = S.runs[runKey()] = {lead: leads[OPP.id], log: [], diff, day: today, opp: OPP.id}; save(); }
     const foe = foeFor(OPP);
-    const b = C.newBattle(today, teamFor(OPP), run.lead, OPP.levels[diff], OPP, foe);
+    const b = C.newBattle(today, teamFor(OPP), run.lead, null, OPP, foe);
     C.replay(b, run.log);
     G = {b, mode: 'daily', run, foe, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
     enterBattle(run.log.length > 0);
@@ -340,7 +340,7 @@
     Music.unlock();
     const seed = 'practice-' + Date.now();
     const foe = C.oppTeam(seed, OPP);
-    const b = C.newBattle(seed, C.playerTeam(seed, OPP), 0, OPP.levels[diff], OPP, foe);
+    const b = C.newBattle(seed, C.playerTeam(seed, OPP), 0, null, OPP, foe);
     G = {b, mode: 'practice', run: {log: [], lead: 0, diff, opp: OPP.id}, foe, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
     enterBattle(false);
   }
@@ -655,13 +655,13 @@
   function openFoeTeam(inBattle) {
     const live = inBattle && G && G.b;
     const sets = live ? G.foe : foeFor(OPP);
-    const src = live ? G.b : C.newBattle(today, teamFor(OPP), 0, OPP.levels[diff], OPP, sets);
+    const src = live ? G.b : C.newBattle(today, teamFor(OPP), 0, null, OPP, sets);
     const mons = sets.map((set) => src.p2.pokemon.find((p) => p.baseSpecies.baseSpecies === D.species.get(set.species).baseSpecies));
     const active = live && G.b.p2.active[0];
     const left = mons.filter((p) => !p.fainted).length;
     const M = $('#modal');
     M.innerHTML = `<div class="sheet foe" role="dialog" aria-modal="true" aria-labelledby="foe-h">
-      <div class="foe-head"><div><p class="eyebrow">${OPP.mechanics} · Lv${mons[0].level}${live ? ` · ${left} of ${mons.length} left` : ''}</p><h2 id="foe-h">${OPP.name}'s team</h2></div>
+      <div class="foe-head"><div><p class="eyebrow">${OPP.mechanics} · ${LV}${live ? ` · ${left} of ${mons.length} left` : ''}</p><h2 id="foe-h">${OPP.name}'s team</h2></div>
       <button class="btn tiny ghost" id="foe-close">Close</button></div>
       <div class="foe-tabs" role="tablist">${mons.map((p, i) => `<button role="tab" id="foe-tab-${i}" aria-selected="${i === 0}" data-i="${i}" class="${p.fainted ? 'out' : ''}">
         ${glyph(p.species.name, 34)}<span>${esc(p.species.name.replace('-Mega', ''))}</span>${p === active ? '<i class="dot" title="In battle"></i>' : ''}</button>`).join('')}</div>
@@ -741,7 +741,7 @@
     $('#lobby').innerHTML = `
       <button class="back" id="btn-back">← All opponents</button>
       <section class="hero">
-        <p class="eyebrow">Day ${C.dayNumber(today)} · Gen 9 battle rules · Lv100</p>
+        <p class="eyebrow">Day ${C.dayNumber(today)} · Gen 9 battle rules · ${LV}</p>
         <h1 class="opp-h">Elite <em>Four</em></h1>
         <p class="lede">Four type specialists drawn from every region, the same for everyone today. Beat all four with one team. Lose once and today's run is over, but you can keep going in practice.</p>
         <div class="cta-row">${cta}${styleNote(E4.asOpp(LINEUP[0]))}</div>
@@ -796,7 +796,7 @@
     const foe = foeFor(OPP);
     const fight = run.fights[run.stage] || (run.fights[run.stage] = {log: []});
     const seed = mode === 'daily' ? today : 'practice-' + Date.now();
-    const b = C.newBattle(seed, teamFor(OPP), run.lead, 100, OPP, foe);
+    const b = C.newBattle(seed, teamFor(OPP), run.lead, null, OPP, foe);
     C.replay(b, fight.log);
     G = {b, mode, kind: 'e4', run: fight, e4: run, foe, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
     enterBattle(fight.log.length > 0);

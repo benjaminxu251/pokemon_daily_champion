@@ -113,13 +113,13 @@
     if (g.randomSets[aceId]) ace = clean(g.randomSet(m.ace, {}, false));
     else ace = Object.assign({name: aceBase, species: m.ace, ivs: IV, level: 100}, HAND[m.ace]);
     out.push(ace);
-    return out;
+    return Core.withLevels(out);
   }
 
   // an opponent descriptor shaped like Core.OPP entries
   function asOpp(m) {
     return {id: 'e4-' + m.id, member: m, name: m.name, title: m.title, gen: 9, randFormat: 'gen9randombattle', format: 'gen9customgame',
-      levels: {easy: 100, hard: 100}, foe: 'The opposing ', skin: 'sv', place: m.from, mechanics: 'Gen IX', origin: m.from};
+      foe: 'The opposing ', skin: 'sv', place: m.from, mechanics: 'Gen IX', origin: m.from};
   }
   const PLAYER = {id: 'e4', randFormat: 'gen9randombattle'};
 

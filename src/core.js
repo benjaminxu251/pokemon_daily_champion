@@ -32,9 +32,9 @@
 
   const OPP = {
     cynthia: {id: 'cynthia', name: 'Cynthia', title: 'Champion Cynthia', gen: 4, randFormat: 'gen4randombattle', format: 'gen4customgame',
-      team: CYNTHIA, origin: 'Platinum', levels: {easy: 100, hard: 100}, foe: "The foe's ", skin: 'dppt', place: 'Sinnoh League', mechanics: 'Gen IV'},
+      team: CYNTHIA, origin: 'Platinum', foe: "The foe's ", skin: 'dppt', place: 'Sinnoh League', mechanics: 'Gen IV'},
     zinnia: {id: 'zinnia', name: 'Zinnia', title: 'Lorekeeper Zinnia', gen: 6, randFormat: 'gen6randombattle', format: 'gen6customgame',
-      team: ZINNIA_TEAM, origin: 'Omega Ruby and Alpha Sapphire', levels: {easy: 100, hard: 100}, foe: 'The opposing ', skin: 'oras', place: 'Sky Pillar', mechanics: 'Gen VI'},
+      team: ZINNIA_TEAM, origin: 'Omega Ruby and Alpha Sapphire', foe: 'The opposing ', skin: 'oras', place: 'Sky Pillar', mechanics: 'Gen VI'},
   };
   const dexes = {};
   const dexFor = (gen) => dexes[gen] || (dexes[gen] = Dex.forGen(gen));
@@ -77,7 +77,13 @@
   }
   // the opponent's team: her team from her original game, same lead and ace every day
   function oppTeam(seedStr, opp = OPP.cynthia) {
-    return opp.team.map((m) => Object.assign({}, m));
+    return withLevels(opp.team);
+  }
+  // Opponents fight at one level with a higher ace, like the games (Platinum Cynthia: Lv58-60, Garchomp Lv62).
+  // Set above the player's average Showdown level (~83) so the champion has a boss edge.
+  const OPP_LEVEL = {team: 88, ace: 92};
+  function withLevels(team) {
+    return team.map((m, i) => Object.assign({}, m, {level: m.ace || i === team.length - 1 ? OPP_LEVEL.ace : OPP_LEVEL.team}));
   }
 
   function newBattle(seedStr, team, leadIdx, level = 100, opp = OPP.cynthia, foeTeam = null) {
@@ -388,5 +394,5 @@
     return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(2026, 9, 14)) / 864e5) + 1;
   }
 
-  window.Core = {generator, statOf, OPP, dexFor, oppTeam, aiChoice, estDamage, dex, CYNTHIA, playerTeam, newBattle, act, replay, needs, toEvents, dateKey, dayNumber, effMult};
+  window.Core = {OPP_LEVEL, withLevels, generator, statOf, OPP, dexFor, oppTeam, aiChoice, estDamage, dex, CYNTHIA, playerTeam, newBattle, act, replay, needs, toEvents, dateKey, dayNumber, effMult};
 })();
