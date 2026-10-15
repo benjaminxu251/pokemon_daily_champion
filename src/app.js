@@ -10,7 +10,6 @@
   // ---------------- storage ----------------
   function readKey(k) { try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage blocked */ } }
-  const DEFAULT_SLOTS = {menu: 'b:menu', battle_cynthia: 'b:hall', battle_zinnia: 'b:sky', battle_e4: 'b:league', pinch: 'b:pinch', victory: 'b:victory', defeat: 'b:defeat'};
   const S = Object.assign({stats: {}, runs: {}, music: {vol: 0.5, speed: 'normal'}, lib: [], style: 'default', art: 'sprites'}, readKey(KEY) || {});
   // Bump RULES whenever teams, levels or battle rules change. A saved battle is a replayed choice log,
   // so an unfinished run from older rules would replay into a different battle; it restarts instead.
@@ -52,7 +51,9 @@
     return trSprite([id + TR_SUFFIX[skinFor(o)], id, id + '-gen3', id + '-gen1'], size);
   };
   const styleNote = (o) => '<button class="btn tiny ghost style-note" data-style-open>' + protagArt(o, 'front', 30) + 'Battle style: ' + SKIN_LABEL[skinFor(o)] + (S.style === 'default' ? ' (default)' : '') + ' · Playing as ' + protagFor(o) + '</button>';
-  S.music.slots = Object.assign({}, DEFAULT_SLOTS, S.music.slots);
+  // Music preferences: one battle theme ('default' = each opponent's own) and one menu track. Older per-slot settings are dropped.
+  delete S.music.slots;
+  S.music = Object.assign({battle: 'default', menu: 'y:lilycove'}, S.music);
   if (!readKey(KEY)) { // carry over records from the first version
     const old = readKey('champdaily:v1');
     if (old && old.stats) for (const d of ['easy', 'hard']) if (old.stats[d]) S.stats['cynthia:' + d] = old.stats[d];
@@ -106,8 +107,49 @@
     victory: {label: 'Victory jingle', bpm: 150, loop: false, lead: [19, 19, 19, 24, null, 22, 24, null, 27, 26, 24, 26, 31, null, null, null], bass: [0, 7, 5, 7, 3, 7, 0, null]},
     defeat: {label: 'Defeat jingle', bpm: 80, loop: false, lead: [15, 14, 12, 10, 9, null, 7, null, 5, null, null, null], bass: [0, null, -2, null, -5, null]},
   };
-  const SLOT_LABEL = {menu: 'Menus', battle_cynthia: 'Cynthia battle', battle_zinnia: 'Zinnia battle', battle_e4: 'Elite Four battle', pinch: "Opponent's last Pokémon", victory: 'Victory', defeat: 'Defeat'};
-  const LOOPS = {menu: true, battle_cynthia: true, battle_zinnia: true, battle_e4: true, pinch: true, victory: false, defeat: false};
+  // Official tracks play through YouTube's embedded player (shown in the "Now playing" dock, as YouTube requires).
+  // Fan uploads can disappear; a failed video falls back to the built-in chiptune.
+  const YT_THEMES = {
+    cynthia: ['Battle! Champion Cynthia · Diamond & Pearl', '873qDiTimak'],
+    zinnia: ['Battle! Zinnia · Omega Ruby & Alpha Sapphire', 'GIn8_Q27WFY'],
+    e4g1: ['Battle! Gym Leader & Elite Four · FireRed & LeafGreen', 'VxFadPqMbfM'],
+    e4g2: ['Battle! Gym Leader & Elite Four · Gold, Silver & Crystal', '1pBl5sWchJY'],
+    e4g3: ['Battle! Gym Leader & Elite Four · Ruby, Sapphire & Emerald', '0j4sfjIXTA0'],
+    e4g4: ['Battle! Elite Four · Diamond & Pearl', 'N7A1wpmdHJ4'],
+    e4g5: ['Battle! Elite Four · Black & White', 'llnXhrCn9Yo'],
+    e4g6: ['Battle! Elite Four · X & Y', 'AclbLQK1hdA'],
+    e4g7: ['Battle! Elite Four · Sun & Moon', 'Dv7AXRqjTuQ'],
+    e4g9: ['Battle! Elite Four · Scarlet & Violet', 'Bjz2R7sDALw'],
+    e4bb: ['Battle! Blueberry League Elite Four · The Indigo Disk', 'jYGGNoV6TvY'],
+    lilycove: ['Lilycove City · Ruby, Sapphire & Emerald', 'y0vVeMsCMWI'],
+  };
+  // Showdown's own battle music, hotlinked like the sprites.
+  const SD_THEMES = {'hgss-kanto-trainer': 'Trainer (Kanto) · HeartGold & SoulSilver', 'hgss-johto-trainer': 'Trainer (Johto) · HeartGold & SoulSilver',
+    'dpp-trainer': 'Trainer · Diamond, Pearl & Platinum', 'dpp-rival': 'Rival · Diamond, Pearl & Platinum', 'bw-trainer': 'Trainer · Black & White',
+    'bw-rival': 'Rival · Black & White', 'bw2-rival': 'Rival · Black 2 & White 2', 'bw2-kanto-gym-leader': 'Kanto Gym Leader · Black 2 & White 2',
+    'bw-subway-trainer': 'Subway Trainer · Black & White', 'xy-trainer': 'Trainer · X & Y', 'xy-rival': 'Rival · X & Y', 'oras-trainer': 'Trainer · Omega Ruby & Alpha Sapphire',
+    'oras-rival': 'Rival · Omega Ruby & Alpha Sapphire', 'sm-trainer': 'Trainer · Sun & Moon', 'sm-rival': 'Rival · Sun & Moon', 'spl-elite4': 'Elite Four · Showdown Premier League'};
+  const SD_AUDIO = 'https://play.pokemonshowdown.com/audio/';
+  // Each opponent's own theme; E4 members use their debut generation's Elite Four music.
+  function defaultBattle(o) {
+    if (o.member) return o.member.from === 'The Indigo Disk' ? 'y:e4bb' : 'y:e4g' + (YT_THEMES['e4g' + o.member.gen] ? o.member.gen : 9);
+    return o.id === 'zinnia' ? 'y:zinnia' : 'y:cynthia';
+  }
+  const FALLBACK = {menu: 'b:menu', battle: 'b:hall'};
+  function sourceLabel(src) {
+    if (!src || src === 'off') return 'Off';
+    const k = src.slice(2);
+    if (src.startsWith('y:')) return YT_THEMES[k] ? YT_THEMES[k][0] : k;
+    if (src.startsWith('s:')) return SD_THEMES[k] || k;
+    if (src.startsWith('b:')) return BUILTIN[k] ? BUILTIN[k].label + ' (chiptune)' : k;
+    const t = S.lib.find((x) => x.id === k); return t ? t.name : 'Missing track';
+  }
+  // The source for a music slot right now: menu, battle, victory or defeat.
+  function sourceFor(slot) {
+    if (slot === 'victory' || slot === 'defeat') return 'b:' + slot;
+    if (slot === 'battle') return (G && G.music) || (S.music.battle !== 'default' ? S.music.battle : defaultBattle(OPP));
+    return S.music.menu || 'y:lilycove';
+  }
 
   const Music = (() => {
     let ctx = null, gain = null, cur = null, curSlot = null, el = null, timer = null;
@@ -184,9 +226,54 @@
       timer = setInterval(sched, 90); sched();
       return token;
     }
+    // ---- YouTube player (lazy-loaded IFrame API, one player reused) ----
+    let yt = null, ytApi = null, ytLoop = false, ytToken = 0;
+    function loadYT() {
+      if (ytApi) return ytApi;
+      ytApi = new Promise((res, rej) => {
+        const t = setTimeout(() => rej(new Error('YouTube API timed out')), 10000);
+        window.onYouTubeIframeAPIReady = () => { clearTimeout(t); res(); };
+        const s = document.createElement('script');
+        s.src = 'https://www.youtube.com/iframe_api';
+        s.onerror = () => { clearTimeout(t); rej(new Error('YouTube API blocked')); };
+        document.head.appendChild(s);
+      });
+      ytApi.catch(() => { ytApi = null; });
+      return ytApi;
+    }
+    function dock(src) {
+      const d = document.getElementById('music-dock');
+      d.hidden = !src;
+      if (src) document.getElementById('md-title').textContent = sourceLabel(src);
+    }
+    async function playYT(src, loop, fallback) {
+      const [, id] = YT_THEMES[src.slice(2)] || [];
+      const token = ++ytToken;
+      const fail = () => { if (token === ytToken && curSrc === src) { dock(null); if (yt) yt.stopVideo(); playSource(fallback, loop); } };
+      if (!id) return fail();
+      try { await loadYT(); } catch (e) { return fail(); }
+      if (token !== ytToken) return;
+      ytLoop = loop; dock(src);
+      const vol = Math.round(S.music.vol * 100);
+      if (!yt) {
+        await new Promise((ready) => {
+          yt = new YT.Player('yt-player', {width: 200, height: 200, videoId: id,
+            playerVars: {autoplay: 1, playsinline: 1, rel: 0, controls: 1},
+            events: {
+              onReady: (e) => { e.target.setVolume(vol); e.target.playVideo(); ready(); },
+              onError: () => fail(),
+              onStateChange: (e) => { if (e.data === 0 && ytLoop) { e.target.seekTo(0); e.target.playVideo(); } },
+            }});
+        });
+      } else { yt.setVolume(vol); yt.loadVideoById(id); }
+    }
+    let curSrc = null;
     async function playSource(src, loop) {
+      curSrc = src;
       if (!src || src === 'off') return;
       if (src.startsWith('b:')) { cur = playSynth(src.slice(2), loop); return; }
+      if (src.startsWith('y:')) return playYT(src, loop, src === sourceFor('menu') ? FALLBACK.menu : FALLBACK.battle);
+      if (src.startsWith('s:')) { el = new Audio(SD_AUDIO + src.slice(2) + '.mp3'); el.loop = loop; el.volume = S.music.vol; el.play().catch(() => {}); return; }
       const id = src.slice(2);
       const rec = await getTrack(id);
       if (!rec) { return; }
@@ -195,23 +282,24 @@
       el.play().catch(() => {});
     }
     async function play(slot, force) {
-      if (!force && curSlot === slot) return;
+      const src = sourceFor(slot);
+      if (!force && curSlot === slot && curSrc === src) return;
       stop(); curSlot = slot;
       if (S.music.muted) return;
-      const token = curSlot;
-      const src = S.music.slots[slot] || DEFAULT_SLOTS[slot];
-      if (src.startsWith('u:') && !S.lib.some((t) => t.id === src.slice(2))) { if (curSlot === token) await playSource(DEFAULT_SLOTS[slot], LOOPS[slot]); return; }
-      await playSource(src, LOOPS[slot]);
+      const loop = slot === 'menu' || slot === 'battle';
+      if (src.startsWith('u:') && !S.lib.some((t) => t.id === src.slice(2))) return playSource(FALLBACK[slot] || 'b:menu', loop);
+      await playSource(src, loop);
     }
     async function preview(src) { stop(); curSlot = '__preview'; if (!S.music.muted) await playSource(src, false); }
     function stop() {
       if (cur) cur.stop = true; cur = null;
       clearInterval(timer);
       if (el) { el.pause(); el = null; }
+      ytToken++; if (yt && yt.pauseVideo) yt.pauseVideo(); dock(null); curSrc = null;
       if (gain && ctx) { gain.gain.setTargetAtTime(0, ctx.currentTime, 0.03); gain = ctx.createGain(); gain.connect(ctx.destination); gain.gain.value = S.music.vol * 0.35; }
       curSlot = null;
     }
-    function setVol(v) { S.music.vol = v; if (gain) gain.gain.value = v * 0.35; if (el) el.volume = v; }
+    function setVol(v) { S.music.vol = v; if (gain) gain.gain.value = v * 0.35; if (el) el.volume = v; if (yt && yt.setVolume) yt.setVolume(Math.round(v * 100)); }
     function blip(f = 880) {
       if (S.music.muted || S.music.sfx === false) return;
       const c = ensureCtx(); if (!c) return;
@@ -219,13 +307,11 @@
       o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.05, c.currentTime); g.gain.exponentialRampToValueAtTime(0.0005, c.currentTime + 0.06);
       o.connect(g); g.connect(ctx.destination); o.start(); o.stop(c.currentTime + 0.07);
     }
-    return {play, preview, stop, setVol, addTrack, delTrack, blip, get slot() { return curSlot; }, unlock: ensureCtx};
+    return {play, preview, stop, setVol, addTrack, delTrack, blip, get slot() { return curSlot; }, get src() { return curSrc; }, unlock: ensureCtx};
   })();
-  const battleSlot = (o) => (o.member ? 'battle_e4' : 'battle_' + o.id);
   function currentMusicSlot() {
     const v = document.body.dataset.view;
-    if (v === 'battle' && G && !G.b.ended) return G.b.p2.pokemon.filter((p) => !p.fainted).length === 1 ? 'pinch' : battleSlot(OPP);
-    return 'menu';
+    return v === 'battle' && G && !G.b.ended ? 'battle' : 'menu';
   }
 
   // ---------------- daily state ----------------
@@ -427,7 +513,7 @@
       say('Battle resumed. What will ' + (G.disp.p1.name || 'you') + ' do?');
       Music.play(currentMusicSlot());
     } else {
-      Music.play(battleSlot(OPP), true);
+      Music.play('battle', true);
       $('#touch').innerHTML = '';
       const accent = OPP.member ? TYPE_COLOR[OPP.member.type] : {cynthia: '#c9a24e', zinnia: '#3fb8b0'}[OPP.id];
       await window.Intro.play($('#scene'), {skin: skinFor(OPP), opp: oppArt(OPP, 160) || '<div class="in-sil"></div>', player: protagArt(OPP, 'front', 160),
@@ -632,7 +718,6 @@
   async function runEvents(evs) {
     for (const e of evs) {
       if (e.update) applyUpdate(e.update, false);
-      if (e.update && e.update.kind === 'switch' && e.update.side === 'p2' && G.b.p2.pokemon.filter((p) => !p.fainted).length === 1) Music.play('pinch');
       if (e.text) await typeText(e.text);
       else if (e.update && e.update.kind === 'hp') await wait(350);
     }
@@ -1067,11 +1152,41 @@
   }
 
   // ---------------- settings ----------------
-  function sourceOptions(sel) {
-    const b = Object.entries(BUILTIN).map(([k, v]) => `<option value="b:${k}" ${sel === 'b:' + k ? 'selected' : ''}>${esc(v.label)}</option>`).join('');
-    const u = S.lib.map((t) => `<option value="u:${t.id}" ${sel === 'u:' + t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
-    return `<optgroup label="Built-in (original chiptunes)">${b}</optgroup>${u ? `<optgroup label="Your tracks">${u}</optgroup>` : ''}<option value="off" ${sel === 'off' ? 'selected' : ''}>Off</option>`;
+  // Every track a player can pick. kind 'battle' adds the Default entry; 'menu' leads with the menu track.
+  function sourceOptions(sel, kind, defaultLabel) {
+    const opt = (v, label) => `<option value="${v}" ${sel === v ? 'selected' : ''}>${esc(label)}</option>`;
+    const ytKeys = Object.keys(YT_THEMES).filter((k) => kind === 'menu' ? k === 'lilycove' : k !== 'lilycove');
+    const extra = Object.keys(YT_THEMES).filter((k) => !ytKeys.includes(k));
+    const b = Object.keys(BUILTIN).filter((k) => k !== 'victory' && k !== 'defeat' && k !== 'pinch').map((k) => opt('b:' + k, BUILTIN[k].label)).join('');
+    const u = S.lib.map((t) => opt('u:' + t.id, t.name)).join('');
+    return (kind === 'battle' ? opt('default', defaultLabel || "Default (each opponent's own theme)") : '') +
+      `<optgroup label="Official themes (YouTube)">${ytKeys.map((k) => opt('y:' + k, YT_THEMES[k][0])).join('')}${extra.map((k) => opt('y:' + k, YT_THEMES[k][0])).join('')}</optgroup>` +
+      `<optgroup label="Showdown battle music">${Object.keys(SD_THEMES).map((k) => opt('s:' + k, SD_THEMES[k])).join('')}</optgroup>` +
+      `<optgroup label="Built-in chiptunes">${b}</optgroup>${u ? `<optgroup label="Your tracks">${u}</optgroup>` : ''}` + opt('off', 'Off');
   }
+  // In-battle music picker: changes this battle's track, optionally saving it as the battle theme preference.
+  function openMusicPicker() {
+    const M = $('#modal');
+    const cur = (G && G.music) || 'default';
+    M.innerHTML = `<div class="sheet settings" role="dialog" aria-modal="true" aria-labelledby="mus-h">
+      <div class="foe-head"><h2 id="mus-h">Music</h2><button class="btn tiny ghost" id="mus-x">Close</button></div>
+      <p class="note">Now playing: <b>${esc(sourceLabel(Music.src))}</b></p>
+      <div class="set-row"><label for="mus-sel">This battle</label><select id="mus-sel">${sourceOptions(cur, 'battle', `Default (${sourceLabel(S.music.battle !== 'default' ? S.music.battle : defaultBattle(OPP))})`)}</select></div>
+      <div class="set-row"><label for="mus-keep">Use for every battle</label><input type="checkbox" id="mus-keep"></div>
+      <div class="set-row"><label for="mus-vol">Volume</label><input type="range" id="mus-vol" min="0" max="1" step="0.05" value="${S.music.vol}"></div>
+      <div class="cta-row"><button class="btn gold" id="mus-done">Done</button></div></div>`;
+    M.hidden = false;
+    $('#mus-sel').onchange = (e) => {
+      G.music = e.target.value === 'default' ? null : e.target.value;
+      if ($('#mus-keep').checked) { S.music.battle = e.target.value; save(); }
+      Music.unlock(); Music.play('battle', true);
+    };
+    $('#mus-keep').onchange = (e) => { if (e.target.checked) { S.music.battle = $('#mus-sel').value; save(); } };
+    $('#mus-vol').oninput = (e) => { Music.setVol(+e.target.value); save(); };
+    $('#mus-x').onclick = $('#mus-done').onclick = () => { M.hidden = true; };
+  }
+  $('#btn-music').onclick = () => { Music.blip(); openMusicPicker(); };
+  $('#md-change').onclick = () => { if (document.body.dataset.view === 'battle' && G) openMusicPicker(); else openSettings(); };
   function openSettings() {
     const M = $('#modal');
     M.innerHTML = `<div class="sheet settings" role="dialog" aria-modal="true" aria-labelledby="set-h">
@@ -1087,10 +1202,11 @@
       <div class="set-row"><label for="sfx">Menu sounds</label><input type="checkbox" id="sfx" ${S.music.sfx !== false ? 'checked' : ''}></div>
       <div class="set-row"><label for="spd">Text speed</label><select id="spd"><option value="normal">Normal</option><option value="fast" ${S.music.speed === 'fast' ? 'selected' : ''}>Fast</option></select></div>
       <h3>Music</h3>
-      ${Object.keys(SLOT_LABEL).map((k) => `<div class="set-row slot-row"><label for="slot-${k}">${SLOT_LABEL[k]}</label>
-        <div class="slot-ctl"><select id="slot-${k}" data-k="${k}">${sourceOptions(S.music.slots[k])}</select><button class="btn tiny ghost" data-preview="${k}" aria-label="Preview ${SLOT_LABEL[k]}">▶</button></div></div>`).join('')}
+      <div class="set-row slot-row"><label for="m-battle">Battle theme</label><div class="slot-ctl"><select id="m-battle">${sourceOptions(S.music.battle, 'battle')}</select></div></div>
+      <p class="note">Default plays Cynthia's theme against Cynthia, Zinnia's against Zinnia, and each Elite Four member's own generation's Elite Four music. Change the track mid-battle with the ♪ Music button.</p>
+      <div class="set-row slot-row"><label for="m-menu">Menu music</label><div class="slot-ctl"><select id="m-menu">${sourceOptions(S.music.menu, 'menu')}</select></div></div>
       <h3>Your tracks</h3>
-      <p class="note">Add audio files from your device, then pick them in any dropdown above. Name them however you like; they stay in this browser only.</p>
+      <p class="note">Add audio files from your device, then pick them in either dropdown above. Name them however you like; they stay in this browser only.</p>
       <ul class="lib">${S.lib.map((t) => `<li><input type="text" id="lib-${t.id}" data-id="${t.id}" value="${esc(t.name)}" aria-label="Track name"><button class="btn tiny ghost" data-del="${t.id}">Remove</button></li>`).join('') || '<li class="empty">No tracks yet.</li>'}</ul>
       <div class="cta-row"><label class="btn" for="lib-add">Add audio files</label><input type="file" id="lib-add" accept="audio/*" multiple hidden><span class="fname" id="lib-msg"></span></div>
       <div class="cta-row"><button class="btn gold" id="set-done">Done</button></div>
@@ -1106,14 +1222,15 @@
     $('#player').onchange = (e) => { S.player = e.target.value; save(); drawTrainers(); if (G) $('#bt-mode').textContent = $('#bt-mode').textContent.replace(/\S+ vs /, protagFor(OPP) + ' vs '); };
     $('#style').onchange = (e) => { S.style = e.target.value; save(); if (G) { $('.device').dataset.skin = skinFor(OPP); renderActives(true); } };
     $('#art').onchange = (e) => { S.art = e.target.value; save(); if (G) renderActives(true); };
-    M.querySelectorAll('select[data-k]').forEach((sel) => sel.onchange = () => { S.music.slots[sel.dataset.k] = sel.value; save(); if (currentMusicSlot() === sel.dataset.k) resume(); });
-    M.querySelectorAll('[data-preview]').forEach((b) => b.onclick = () => { Music.unlock(); Music.preview(S.music.slots[b.dataset.preview]); });
+    $('#m-battle').onchange = (e) => { S.music.battle = e.target.value; save(); if (currentMusicSlot() === 'battle') resume(); };
+    $('#m-menu').onchange = (e) => { S.music.menu = e.target.value; save(); if (currentMusicSlot() === 'menu') { Music.unlock(); resume(); } };
     M.querySelectorAll('.lib input[type=text]').forEach((inp) => inp.onchange = () => { const t = S.lib.find((x) => x.id === inp.dataset.id); if (t) { t.name = inp.value.trim() || t.name; save(); openSettings(); } });
     M.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
       const id = b.dataset.del;
       await Music.delTrack(id);
       S.lib = S.lib.filter((t) => t.id !== id);
-      for (const k of Object.keys(S.music.slots)) if (S.music.slots[k] === 'u:' + id) S.music.slots[k] = DEFAULT_SLOTS[k];
+      if (S.music.battle === 'u:' + id) S.music.battle = 'default';
+      if (S.music.menu === 'u:' + id) S.music.menu = 'y:lilycove';
       save(); openSettings();
     });
     $('#lib-add').onchange = async (e) => {

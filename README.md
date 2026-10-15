@@ -101,7 +101,7 @@ node tools/ko-check.js                 # does the AI take obvious last-Pokémon 
 - Font: Pixelify Sans (SIL Open Font License), loaded from Google Fonts.
 - Pokémon and trainer sprites: linked at runtime from Pokémon Showdown's sprite server, not stored in this repo (© Nintendo, Creatures, GAME FREAK). Settings can switch to the original drawn art in `src/art.js`, which is also the fallback when a sprite fails to load.
 - Backgrounds and trainers: original, drawn in code.
-- Music and sound: original chiptunes generated in the browser.
+- Music: official themes through YouTube embeds and Showdown's battle music by link (nothing stored here), with original browser-generated chiptunes as choices and fallback.
 
 See [THIRD_PARTY.md](THIRD_PARTY.md).
 

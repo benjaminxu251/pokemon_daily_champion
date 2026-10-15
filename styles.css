@@ -581,3 +581,12 @@ img.trsp { image-rendering: pixelated; object-fit: contain; }
 .bx-chips .chip.vol { background: #6a5aa8; } .bx-chips .chip.side { background: #56606e; }
 #tip .tip-stats b.up-t { color: #6fdc8a; } #tip .tip-stats b.down-t { color: #ff8a7a; }
 #tip .tip-stats em.up-t { color: #6fdc8a; } #tip .tip-stats em.down-t { color: #ff8a7a; }
+
+/* ---------- music: in-battle button and YouTube "Now playing" dock ---------- */
+.bt-bar #btn-music { margin-left: auto; font-size: 12px; padding: 4px 10px; }
+#music-dock { display: flex; gap: 10px; align-items: center; max-width: 440px; margin: 14px auto 0; padding: 8px; background: #1a1922; border: 1px solid #2c2a38; border-radius: 12px; }
+#music-dock[hidden] { display: none; }
+#music-dock iframe, #yt-player { width: 200px; height: 200px; flex: none; border: 0; border-radius: 8px; }
+#music-dock .md-info { display: grid; gap: 4px; min-width: 0; font-size: 13px; }
+#music-dock .md-info small { color: var(--muted); font-family: var(--display); letter-spacing: .08em; text-transform: uppercase; font-size: 10px; }
+#music-dock .md-info .btn { justify-self: start; }

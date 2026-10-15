@@ -24,3 +24,5 @@ Loaded from Google Fonts. Licensed under the SIL Open Font License 1.1.
 Pokémon and all related names are trademarks of Nintendo, Creatures Inc. and GAME FREAK inc. This is an unofficial, non-commercial fan project. It is not affiliated with or endorsed by them or The Pokémon Company, and this repository contains none of their artwork or music.
 
 By default the game displays Pokémon and trainer sprites linked from Pokémon Showdown's sprite server (https://play.pokemonshowdown.com/sprites/). They are loaded by the player's browser at runtime and are not stored in or distributed with this repository. The sprites are © Nintendo, Creatures Inc. and GAME FREAK inc. Players can switch to the project's original drawn art in Settings.
+
+Music: official Pokémon battle themes play through YouTube's embedded player, and Pokémon Showdown's battle music is linked from https://play.pokemonshowdown.com/audio/. Neither is stored in this repository; the music is © its rights holders. The built-in chiptunes are original.

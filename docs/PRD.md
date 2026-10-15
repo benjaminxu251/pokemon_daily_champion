@@ -247,23 +247,19 @@ Poppy · Olivia · Lacey · Lucian
 - Menu sounds on/off.
 - Text speed: normal or fast.
 
-**Music slots**, each set with a dropdown and a preview button:
-- Menus
-- Cynthia battle
-- Zinnia battle
-- Elite Four battle
-- Her last Pokémon (the pinch theme)
-- Victory
-- Defeat
+**Music** (Settings → Music)
+- **Battle theme:** Default, or any track below for every battle. Default plays each opponent's own theme: Cynthia's "Battle! Champion" (Diamond & Pearl), "Battle! Zinnia" (ORAS), and for each Elite Four member their debut generation's Elite Four music (Gen 1–3 Elite Fours used the Gym Leader theme; Blueberry League members get theirs from The Indigo Disk).
+- **Menu music:** defaults to Lilycove City (Ruby, Sapphire & Emerald).
+- **In battle:** the ♪ Music button changes the current battle's track, with an option to keep it for every battle, plus volume.
+- Victory and defeat use the built-in jingles. There is no last-Pokémon theme switch.
 
-**Built-in tracks** are original WebAudio chiptunes, defaulting to:
-- Cynthia: "Champion's Hall"
-- Zinnia: "Pillar Wind"
-- Elite Four: "League Gauntlet"
-- plus a menu theme, a last-Pokémon theme, and victory and defeat jingles
+**Sources**
+- Official themes play through YouTube's embedded player, shown in a "Now playing" box below the battle screen (YouTube requires a visible player of at least 200×200). Cynthia's and the Gen 4 Elite Four theme come from the official Pokémon DP Sound Library channel; the rest are fan uploads, which can disappear.
+- Showdown's battle music (per-generation trainer and rival themes) is hotlinked from `play.pokemonshowdown.com/audio`.
+- Original WebAudio chiptunes remain as choices and as the fallback whenever YouTube is blocked or a video fails.
 
 **Your tracks**
-- Players can add their own audio files, name them, and pick them in any slot.
+- Players can add their own audio files, name them, and pick them as the battle theme or menu music.
 - Files are stored in IndexedDB in their browser only.
 
 **Persistence**
@@ -278,7 +274,7 @@ Poppy · Olivia · Lacey · Lucian
 
 ## 10. Constraints and decisions
 
-- **No official assets in the repo.** Official sprites, music and trainer art belong to Nintendo, Creatures and GAME FREAK. The repo contains only original art, music and code. Official sprites are linked from Pokémon Showdown at runtime, a choice the project owner made accepting the takedown risk. The drawn art stays as the fallback and as a setting.
+- **No official assets in the repo.** Official sprites, music and trainer art belong to Nintendo, Creatures and GAME FREAK. The repo contains only original art, music and code. Official sprites and Showdown's music are linked from Pokémon Showdown at runtime, and official themes play through YouTube embeds, a choice the project owner made accepting the takedown risk. The drawn art stays as the fallback and as a setting.
 - **Fixed champion teams:** Cynthia and Zinnia use their real in-game teams every day. This is faithful, but the teams are public and the same every day, so players can plan counters. The Elite Four's daily variety offsets this.
 - **One difficulty:** Easy and Hard were removed. Player teams use Showdown's balance levels rather than a flat Lv100, so each day's team is about equally strong.
 

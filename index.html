@@ -38,7 +38,7 @@
         <li>Terastallization is off, so Showdown's Gen 9 "Tera Blast user" sets are skipped. Those Pokémon use their next-best Showdown set instead, for both your team and the Elite Four's.</li>
         <li>The opponents simulate each of their options against each of yours one turn ahead, predict your most likely move, and avoid plays that lose badly.</li>
         <li>Pokémon and trainer sprites are linked from <a href="https://play.pokemonshowdown.com/" target="_blank" rel="noopener">Pokémon Showdown</a>'s sprite server and belong to Nintendo, Creatures and GAME FREAK; nothing is stored here. Settings can switch to original drawn art. Backgrounds and trainers are original.</li>
-        <li>Music and sound effects are original chiptunes; you can swap in your own audio files in Settings.</li>
+        <li>Music: official themes play through YouTube's embedded player and Showdown's battle music is linked; neither is stored here. Original chiptunes are the fallback, and you can add your own audio files in Settings.</li>
         <li>Font: Pixelify Sans (SIL Open Font License).</li>
       </ul>
       <h2>Disclaimer</h2>
@@ -67,11 +67,12 @@
         </div>
         <div id="textbox" role="status" aria-live="polite"><span id="textbox-t"></span></div>
       </div>
-      <div class="bt-bar"><span class="bt-mode" id="bt-mode"></span><button class="pill" id="btn-foe">Cynthia's team</button></div>
+      <div class="bt-bar"><span class="bt-mode" id="bt-mode"></span><button class="pill" id="btn-music">♪ Music</button><button class="pill" id="btn-foe">Cynthia's team</button></div>
       <div class="screen" id="touch"></div>
     </div>
   </div>
 </main>
+<aside id="music-dock" hidden aria-label="Now playing"><div id="yt-player"></div><div class="md-info"><small>Now playing</small><b id="md-title"></b><button class="btn tiny ghost" id="md-change">Change</button></div></aside>
 <p class="foot">Unofficial fan project, not affiliated with Nintendo, Game Freak or The Pokémon Company. Battle engine: Pokémon Showdown (MIT).</p>
 <div id="modal" hidden></div>
 <div id="tip" role="tooltip" hidden></div>
