@@ -32,6 +32,15 @@ Reference: [Daily Red Game](https://dailyredgame.org/), the project that inspire
 - Pick 1 of 3 Pokémon six times, with the same daily candidates for everyone.
 - Show the candidates one round at a time, so each pick is a commitment.
 
+## Elite Four: Pokémon Champions-style Megas
+
+- Bring Mega Evolution into the Elite Four, in the style of Pokémon Champions, for both the player and the Elite Four members.
+- This replaces today's no-Mega rule for the Elite Four. Terastallization and Z-Moves stay off.
+- Open questions:
+  - Which Mega Stones are in the pool, and how do Megas get onto Random Battle teams? Gen 9 sets don't carry Mega Stones.
+  - Do trainers whose ace has a Mega (Gengar, Gyarados, Salamence, Metagross, Gallade and others) always Mega Evolve their ace?
+  - Is it one Mega per battle per side?
+
 ## Smarter AI
 
 - Two-turn search with pruning. Keep the decision under about 1 second on a mid-range phone.
@@ -50,5 +59,4 @@ Reference: [Daily Red Game](https://dailyredgame.org/), the project that inspire
 
 ## Open questions
 
-- Zinnia: should she get Aster (Whismur) as a sixth Pokémon? Aster never battles in the games.
 - Streaks: should they count consecutive days played, or only consecutive wins?

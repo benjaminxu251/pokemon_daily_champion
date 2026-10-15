@@ -102,7 +102,9 @@
     const aceBase = dex9.species.get(m.ace).baseSpecies;
     const pool = Object.keys(g.randomSets).filter((id) => {
       const sp = dex9.species.get(id);
-      const legend = (sp.tags || []).some((t) => ['Restricted Legendary', 'Sub-Legendary', 'Mythical'].includes(t));
+      // legendaries, mythicals and Paradox Pokémon (the DLC Paradoxes aren't tagged in Showdown's data)
+      const legend = (sp.tags || []).some((t) => ['Restricted Legendary', 'Sub-Legendary', 'Mythical', 'Paradox'].includes(t)) ||
+        ['Gouging Fire', 'Raging Bolt', 'Iron Crown', 'Iron Boulder'].includes(sp.baseSpecies);
       return sp.exists && sp.types.includes(m.type) && sp.baseSpecies !== aceBase && !sp.battleOnly && !legend;
     });
     const r = rng('e4pool|' + day + '|' + m.id);

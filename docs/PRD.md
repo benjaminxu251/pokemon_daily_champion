@@ -96,7 +96,7 @@ Each trainer keeps their original type theme and their signature ace.
 
 **Trainer teams**
 - The other five Pokémon are a fresh daily draw of Gen 9 Random Battle sets of the trainer's type.
-- Restricted legendaries, sub-legendaries and mythicals are excluded.
+- Restricted legendaries, sub-legendaries, mythicals and Paradox Pokémon are excluded. The DLC Paradoxes aren't tagged in Showdown's data, so they're excluded by name.
 - No Pokémon line is repeated within a team.
 - Aces that have no Gen 9 Random Battle set get hand-built sets: Machamp, Xatu, Crobat, Absol, Dusclops, Walrein, Drapion, Barbaracle and Aegislash.
 
