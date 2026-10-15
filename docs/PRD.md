@@ -48,6 +48,7 @@ Where Champion Daily differs:
 - The player's team is generated independently for each mode: Cynthia uses Gen 4 sets, Zinnia Gen 6 and the Elite Four Gen 9.
 - Battles are deterministic, given the seed and the choices made. A run is stored as a log of choices and replayed on load, so a player can close the tab mid-battle and resume exactly where they left off.
 - Day number: 2026-10-14 is Day 1.
+- Saved runs carry a rules version. When teams, levels or battle rules change, the version is bumped, and any unfinished run from older rules restarts cleanly instead of replaying into a different battle. Finished results and records are kept.
 - There is one difficulty only. The player's Pokémon keep Showdown's Random Battle balance levels (roughly 65–100). Every opponent (Cynthia, Zinnia and each Elite Four member) fights at Lv88 with their ace at Lv92. That mirrors the games' pattern of one team level plus a higher ace, and sits a few levels above the player's average of about Lv83 so the champion has a boss edge. Their competitive 252/252 EV spreads add to that edge.
 - Terastallization is off in every mode. Gen 9 "Tera Blast user" sets are skipped, and the generator uses that Pokémon's other Showdown sets.
 

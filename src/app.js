@@ -14,6 +14,14 @@
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage blocked */ } }
   const DEFAULT_SLOTS = {menu: 'b:menu', battle_cynthia: 'b:hall', battle_zinnia: 'b:sky', battle_e4: 'b:league', pinch: 'b:pinch', victory: 'b:victory', defeat: 'b:defeat'};
   const S = Object.assign({stats: {}, runs: {}, music: {vol: 0.5, speed: 'normal'}, lib: [], style: 'default'}, readKey(KEY) || {});
+  // Bump RULES whenever teams, levels or battle rules change. A saved battle is a replayed choice log,
+  // so an unfinished run from older rules would replay into a different battle; it restarts instead.
+  const RULES = 2;
+  for (const [k, r] of Object.entries(S.runs)) {
+    const finished = r.result || r.status === 'won' || r.status === 'lost';
+    if (!finished && r.rules !== RULES) { delete S.runs[k]; S.staleCleared = true; }
+  }
+  if (S.staleCleared) { delete S.staleCleared; save(); }
   // Battle screen styles; 'default' follows the opponent's own generation.
   const STYLES = {default: 'Default (match the opponent)', gen3: 'Gen 3 (Ruby, Sapphire, Emerald)', gen4: 'Gen 4 (Diamond, Pearl, Platinum)', gen6: 'Gen 6 (X, Y, ORAS)'};
   const STYLE_SKIN = {gen3: 'gen3', gen4: 'dppt', gen6: 'oras'};
@@ -329,7 +337,7 @@
   function startDaily() {
     Music.unlock();
     let run = S.runs[runKey()];
-    if (!run) { run = S.runs[runKey()] = {lead: leads[OPP.id], log: [], diff, day: today, opp: OPP.id}; save(); }
+    if (!run) { run = S.runs[runKey()] = {lead: leads[OPP.id], log: [], diff, day: today, opp: OPP.id, rules: RULES}; save(); }
     const foe = foeFor(OPP);
     const b = C.newBattle(today, teamFor(OPP), run.lead, null, OPP, foe);
     C.replay(b, run.log);
@@ -778,7 +786,7 @@
     $('#lobby').querySelectorAll('[data-view]').forEach((b) => b.onclick = () => { setOpp(E4.asOpp(LINEUP[+b.dataset.view])); openFoeTeam(false); });
     const s1 = $('#e4-start'); if (s1) s1.onclick = () => {
       let run = e4Run();
-      if (!run) { run = S.runs[E4KEY] = {lead: leads.e4, stage: 0, status: 'live', fights: [], day: today, lineup: LINEUP.map((m) => m.id)}; save(); }
+      if (!run) { run = S.runs[E4KEY] = {lead: leads.e4, stage: 0, status: 'live', fights: [], day: today, lineup: LINEUP.map((m) => m.id), rules: RULES}; save(); }
       startE4Fight(run, 'daily');
     };
     const r1 = $('#e4-result'); if (r1) r1.onclick = () => e4Summary(r, 'daily');
