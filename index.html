@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Champion Daily</title>
+<meta name="description" content="A daily Pokémon battle challenge: Champion Cynthia under Gen 4 rules. Same team for everyone, every day.">
+<meta name="theme-color" content="#131222">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Barlow+Semi+Condensed:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="brand" id="btn-home">CHAMPION <b>DAILY</b></button>
+  <button class="pill" id="btn-mute" aria-pressed="true">Sound on</button>
+  <button class="pill" id="btn-about">About</button>
+  <button class="pill" id="btn-settings">Settings</button>
+</header>
+<main>
+  <div id="loading">Loading the battle engine…</div>
+  <div id="home" hidden></div>
+  <div id="lobby" hidden></div>
+  <article id="about" hidden>
+    <button class="back" id="about-back">← Back</button>
+    <section class="hero about">
+      <p class="eyebrow">About</p>
+      <h1>Champion <em>Daily</em></h1>
+      <p class="lede">A daily Pokémon battle challenge. Every day everyone gets the same random team and the same opponent: Champion Cynthia under Gen 4 rules. One shot a day; practice as much as you like after.</p>
+    </section>
+    <section class="about-body">
+      <h2>Inspiration</h2>
+      <p>Champion Daily is inspired by <a href="https://dailyredgame.org/" target="_blank" rel="noopener">Daily Red Game</a>, a Wordle-style daily battle against Red. Daily Red Game in turn credits <a href="https://github.com/amoi-builds/dailyred" target="_blank" rel="noopener">amoi-builds' original Daily Red project</a> as its inspiration. Same idea here, with a different champion, Gen 4 rules, and an opponent AI that searches every move and switch with the real battle engine.</p>
+      <h2>How it's built</h2>
+      <ul>
+        <li>Battles run on <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/sim</a>, the browser build of the <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> simulator (MIT). Your teams come from Showdown's Random Battle sets.</li>
+        <li>The opponents simulate each of their options against each of yours one turn ahead, predict your most likely move, and avoid plays that lose badly.</li>
+        <li>Music and sound effects are original chiptunes; you can swap in your own audio files in Settings.</li>
+        <li>Font: Pixelify Sans (SIL Open Font License).</li>
+      </ul>
+      <h2>Disclaimer</h2>
+      <p>Unofficial fan project. Not affiliated with or endorsed by Nintendo, Creatures Inc., GAME FREAK inc. or The Pokémon Company. Pokémon names and characters belong to their respective owners.</p>
+    </section>
+  </article>
+  <div id="battle" hidden>
+    <div class="device">
+      <div class="screen" id="scene">
+        <div class="plat p2"></div><div class="plat p1"></div>
+        <div class="battler p2" id="mon-p2"></div>
+        <div class="battler p1" id="mon-p1"></div>
+        <div class="hpbox p2" id="box-p2" hidden>
+          <div class="bx-top"><span class="bx-name"></span><span class="bx-mega" hidden>MEGA</span><span class="bx-lv"></span></div>
+          <div class="bx-hp"><b>HP</b><span class="hp-track"><i class="hp-fill"></i></span></div>
+          <div class="bx-row2"><span class="bx-status"></span></div>
+        </div>
+        <div class="hpbox p1" id="box-p1" hidden>
+          <div class="bx-top"><span class="bx-name"></span><span class="bx-mega" hidden>MEGA</span><span class="bx-lv"></span></div>
+          <div class="bx-hp"><b>HP</b><span class="hp-track"><i class="hp-fill"></i></span></div>
+          <div class="bx-row2"><span class="bx-status"></span><span class="bx-hpnum"></span></div>
+        </div>
+        <div class="balls" id="balls-p2"></div>
+        <div class="balls" id="balls-p1"></div>
+        <div id="textbox" role="status" aria-live="polite"><span id="textbox-t"></span></div>
+      </div>
+      <div class="bt-bar"><span class="bt-mode" id="bt-mode"></span><button class="pill" id="btn-foe">Cynthia's team</button></div>
+      <div class="screen" id="touch"></div>
+    </div>
+  </div>
+</main>
+<p class="foot">Unofficial fan project, not affiliated with Nintendo, Game Freak or The Pokémon Company. Battle engine: Pokémon Showdown (MIT).</p>
+<div id="modal" hidden></div>
+
+<script src="vendor/sim.js"></script>
+<script src="src/core.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>

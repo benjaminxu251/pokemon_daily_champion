@@ -1,0 +1,765 @@
+(function () {
+  const C = window.Core;
+  const $ = (s, el = document) => el.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+
+  const TYPE_COLOR = {Normal: '#a8a77a', Fire: '#e8742f', Water: '#4f8fe6', Electric: '#e8c330', Grass: '#5fb046', Ice: '#78cfd0', Fighting: '#c03a2e',
+    Poison: '#9a46a8', Ground: '#d2ad5e', Flying: '#8f9be8', Psychic: '#ea5a86', Bug: '#9aad25', Rock: '#b49d3c', Ghost: '#6a5596',
+    Dragon: '#6640e8', Dark: '#6b5548', Steel: '#a5a5c4', Fairy: '#e48ec4', '???': '#68a090'};
+  const KEY = 'champdaily:v2';
+  const OPPS = [C.OPP.cynthia];
+
+  // ---------------- storage ----------------
+  function readKey(k) { try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage blocked */ } }
+  const DEFAULT_SLOTS = {menu: 'b:menu', battle_cynthia: 'b:hall', pinch: 'b:pinch', victory: 'b:victory', defeat: 'b:defeat'};
+  const S = Object.assign({stats: {}, runs: {}, music: {vol: 0.5, speed: 'normal'}, lib: []}, readKey(KEY) || {});
+  S.music.slots = Object.assign({}, DEFAULT_SLOTS, S.music.slots);
+  if (!readKey(KEY)) { // carry over records from the first version
+    const old = readKey('champdaily:v1');
+    if (old && old.stats) for (const d of ['easy', 'hard']) if (old.stats[d]) S.stats['cynthia:' + d] = old.stats[d];
+    if (old && old.music) { S.music.vol = old.music.vol ?? 0.5; S.music.muted = old.music.muted; S.music.sfx = old.music.sfx; S.music.speed = old.music.speed || 'normal'; }
+  }
+  const stat = (opp, d) => (S.stats[opp + ':' + d] = Object.assign({w: 0, l: 0, streak: 0, best: 0, lastDay: null}, S.stats[opp + ':' + d]));
+
+  // ---------------- per-opponent context ----------------
+  let OPP = C.OPP.cynthia;
+  let D = C.dexFor(4);
+  function setOpp(o) { OPP = o; D = C.dexFor(o.gen); }
+
+  // ---------------- glyph: base-stat radar in type colors ----------------
+  let gid = 0;
+  function glyph(species, size, opts = {}) {
+    const sp = (opts.dex || D).species.get(species);
+    const bs = sp.baseStats;
+    const order = ['hp', 'atk', 'def', 'spe', 'spd', 'spa'];
+    const cx = 50, cy = 50;
+    const pts = order.map((k, i) => {
+      const a = -Math.PI / 2 + i * Math.PI / 3;
+      const r = 14 + 32 * Math.min(bs[k], 160) / 160;
+      return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    });
+    const c1 = TYPE_COLOR[sp.types[0]], c2 = TYPE_COLOR[sp.types[1] || sp.types[0]];
+    const id = 'g' + (gid++);
+    const ring = order.map((k, i) => { const a = -Math.PI / 2 + i * Math.PI / 3; return `${cx + 46 * Math.cos(a)},${cy + 46 * Math.sin(a)}`; }).join(' ');
+    const mega = sp.isMega ? `<polygon points="${ring}" fill="none" stroke="${c2}" stroke-width="2.5" opacity=".8"/>` : '';
+    return `<svg class="glyph" viewBox="0 0 100 100" width="${size}" height="${size}" aria-label="${esc(sp.name)}" role="img">
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
+      <polygon points="${ring}" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1" stroke-dasharray="2 3"/>${mega}
+      <polygon points="${pts.map((p) => p.join(',')).join(' ')}" fill="url(#${id})" stroke="rgba(10,8,20,.85)" stroke-width="3" stroke-linejoin="round"/>
+      ${opts.back ? '' : '<circle cx="46" cy="44" r="3.4" fill="#111"/><circle cx="60" cy="44" r="3.4" fill="#111"/><circle cx="47" cy="43" r="1.1" fill="#fff"/><circle cx="61" cy="43" r="1.1" fill="#fff"/>'}
+    </svg>`;
+  }
+  const typeChip = (t) => `<span class="type" style="--tc:${TYPE_COLOR[t]}">${t}</span>`;
+  const itemName = (x) => x ? D.items.get(x).name : 'None';
+  const abilName = (x) => D.abilities.get(x).name;
+
+  // ---------------- music ----------------
+  const BUILTIN = {
+    menu: {label: 'Champion Daily menu', bpm: 92, loop: true, lead: [12, null, 15, 19, 17, null, 15, 12, 10, null, 12, 15, 14, null, null, null, 12, null, 15, 19, 22, null, 20, 19, 17, 15, 14, 15, 12, null, null, null], bass: [0, 0, 7, 7, 5, 5, 3, 3]},
+    hall: {label: 'Champion\'s Hall', bpm: 170, loop: true, lead: [24, 22, 19, 22, 24, 27, 26, 24, 22, 19, 17, 19, 22, null, 19, null, 24, 22, 19, 22, 24, 27, 29, 31, 29, 27, 26, 24, 22, 24, null, null], bass: [0, 12, 0, 12, 0, 12, 0, 12, -2, 10, -2, 10, -4, 8, -2, 10]},
+    pinch: {label: 'Last Stand', bpm: 196, loop: true, lead: [27, 26, 24, 26, 27, 31, 27, 26, 24, 22, 24, 26, 27, null, 31, null, 32, 31, 29, 27, 26, 27, 29, 31, 34, 32, 31, 29, 27, 26, 24, null], bass: [0, 0, 12, 0, 1, 1, 13, 1]},
+    victory: {label: 'Victory jingle', bpm: 150, loop: false, lead: [19, 19, 19, 24, null, 22, 24, null, 27, 26, 24, 26, 31, null, null, null], bass: [0, 7, 5, 7, 3, 7, 0, null]},
+    defeat: {label: 'Defeat jingle', bpm: 80, loop: false, lead: [15, 14, 12, 10, 9, null, 7, null, 5, null, null, null], bass: [0, null, -2, null, -5, null]},
+  };
+  const SLOT_LABEL = {menu: 'Menus', battle_cynthia: 'Cynthia battle', pinch: 'Her last Pokémon', victory: 'Victory', defeat: 'Defeat'};
+  const LOOPS = {menu: true, battle_cynthia: true, pinch: true, victory: false, defeat: false};
+
+  const Music = (() => {
+    let ctx = null, gain = null, cur = null, curSlot = null, el = null, timer = null;
+    const urls = {};
+    let db = null;
+    function openDB() {
+      if (db) return Promise.resolve(db);
+      return new Promise((res) => {
+        try {
+          const r = indexedDB.open('champdaily-library', 1);
+          r.onupgradeneeded = () => r.result.createObjectStore('tracks');
+          r.onsuccess = () => { db = r.result; res(db); };
+          r.onerror = () => res(null);
+        } catch (e) { res(null); }
+      });
+    }
+    async function getTrack(id) {
+      if (!(await openDB())) return null;
+      return new Promise((res) => {
+        try { const q = db.transaction('tracks').objectStore('tracks').get(id); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); } catch (e) { res(null); }
+      });
+    }
+    async function addTrack(file) {
+      if (!(await openDB())) return null;
+      const id = 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      return new Promise((res) => {
+        try {
+          const tx = db.transaction('tracks', 'readwrite');
+          tx.objectStore('tracks').put({blob: file}, id);
+          tx.oncomplete = () => res(id); tx.onerror = () => res(null);
+        } catch (e) { res(null); }
+      });
+    }
+    async function delTrack(id) {
+      if (await openDB()) { try { db.transaction('tracks', 'readwrite').objectStore('tracks').delete(id); } catch (e) {} }
+      if (urls[id]) { URL.revokeObjectURL(urls[id]); delete urls[id]; }
+    }
+    function ensureCtx() {
+      if (!ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        ctx = new AC(); gain = ctx.createGain(); gain.connect(ctx.destination);
+      }
+      gain.gain.value = S.music.vol * 0.35;
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    }
+    const freq = (n) => 220 * Math.pow(2, n / 12);
+    function playSynth(name, loop) {
+      const c = ensureCtx(); if (!c) return null;
+      const song = BUILTIN[name];
+      const step = 60 / song.bpm / 2;
+      const leadLen = song.lead.length, total = Math.max(leadLen, song.bass.length * 2);
+      const t0 = c.currentTime + 0.05; let i = 0;
+      const token = {stop: false};
+      function note(type, f, at, dur, vol) {
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = type; o.frequency.value = f;
+        g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(0.0008, at + dur);
+        o.connect(g); g.connect(gain); o.start(at); o.stop(at + dur + 0.02);
+      }
+      function sched() {
+        if (token.stop) return;
+        while (t0 + i * step < c.currentTime + 0.4) {
+          if (!loop && i >= total) { clearInterval(timer); return; }
+          const at = t0 + i * step, k = i % total;
+          const L = song.lead[k % leadLen];
+          if (L != null) note('square', freq(L), at, step * 0.9, 0.16);
+          if (k % 2 === 0) { const B = song.bass[(k / 2) % song.bass.length]; if (B != null) note('triangle', freq(B - 12), at, step * 1.8, 0.5); }
+          if (loop && name !== 'menu' && k % 4 === 2) note('square', 1800 + (k % 8) * 40, at, 0.025, 0.04);
+          i++;
+        }
+      }
+      timer = setInterval(sched, 90); sched();
+      return token;
+    }
+    async function playSource(src, loop) {
+      if (!src || src === 'off') return;
+      if (src.startsWith('b:')) { cur = playSynth(src.slice(2), loop); return; }
+      const id = src.slice(2);
+      const rec = await getTrack(id);
+      if (!rec) { return; }
+      if (!urls[id]) urls[id] = URL.createObjectURL(rec.blob);
+      el = new Audio(urls[id]); el.loop = loop; el.volume = S.music.vol;
+      el.play().catch(() => {});
+    }
+    async function play(slot, force) {
+      if (!force && curSlot === slot) return;
+      stop(); curSlot = slot;
+      if (S.music.muted) return;
+      const token = curSlot;
+      const src = S.music.slots[slot] || DEFAULT_SLOTS[slot];
+      if (src.startsWith('u:') && !S.lib.some((t) => t.id === src.slice(2))) { if (curSlot === token) await playSource(DEFAULT_SLOTS[slot], LOOPS[slot]); return; }
+      await playSource(src, LOOPS[slot]);
+    }
+    async function preview(src) { stop(); curSlot = '__preview'; if (!S.music.muted) await playSource(src, false); }
+    function stop() {
+      if (cur) cur.stop = true; cur = null;
+      clearInterval(timer);
+      if (el) { el.pause(); el = null; }
+      if (gain && ctx) { gain.gain.setTargetAtTime(0, ctx.currentTime, 0.03); gain = ctx.createGain(); gain.connect(ctx.destination); gain.gain.value = S.music.vol * 0.35; }
+      curSlot = null;
+    }
+    function setVol(v) { S.music.vol = v; if (gain) gain.gain.value = v * 0.35; if (el) el.volume = v; }
+    function blip(f = 880) {
+      if (S.music.muted || S.music.sfx === false) return;
+      const c = ensureCtx(); if (!c) return;
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.05, c.currentTime); g.gain.exponentialRampToValueAtTime(0.0005, c.currentTime + 0.06);
+      o.connect(g); g.connect(ctx.destination); o.start(); o.stop(c.currentTime + 0.07);
+    }
+    return {play, preview, stop, setVol, addTrack, delTrack, blip, get slot() { return curSlot; }, unlock: ensureCtx};
+  })();
+  const battleSlot = (o) => 'battle_' + o.id;
+  function currentMusicSlot() {
+    const v = document.body.dataset.view;
+    if (v === 'battle' && G && !G.b.ended) return G.b.p2.pokemon.filter((p) => !p.fainted).length === 1 ? 'pinch' : battleSlot(OPP);
+    return 'menu';
+  }
+
+  // ---------------- daily state ----------------
+  const today = C.dateKey();
+  const diff = 'hard'; // single mode: Lv100
+  const teams = {}, foes = {};
+  const teamFor = (o) => teams[o.id] || (teams[o.id] = C.playerTeam(today, o));
+  const foeFor = (o) => foes[o.id] || (foes[o.id] = C.oppTeam(today, o));
+  const leads = {cynthia: 0};
+  let G = null;
+  const runKey = (o = OPP, d = diff) => `${today}:${o.id}:${d}`;
+  const dName = (d) => (d === 'easy' ? 'Easy' : 'Hard');
+  function reorder(t, i) { const a = t.slice(); const [x] = a.splice(i, 1); a.unshift(x); return a; }
+
+  function show(view) {
+    $('#home').hidden = view !== 'home';
+    $('#lobby').hidden = view !== 'lobby';
+    $('#battle').hidden = view !== 'battle';
+    $('#about').hidden = view !== 'about';
+    document.body.dataset.view = view;
+    document.body.dataset.opp = view === 'home' ? '' : OPP.id;
+    window.scrollTo(0, 0);
+  }
+
+  // ---------------- main menu ----------------
+  function renderHome() {
+    const num = C.dayNumber(today);
+    $('#home').innerHTML = `
+      <section class="hero">
+        <p class="eyebrow">Day ${num} · ${today}</p>
+        <h1>Champion <em>Daily</em></h1>
+        <p class="lede">Champion Cynthia brings her Platinum team. You get a fresh random team every day, the same for everyone.</p>
+      </section>
+      <div class="opp-grid">${OPPS.map((o) => {
+        setOpp(o);
+        const r = S.runs[runKey(o)]; const st = r && r.result ? r.result : r ? 'live' : 'open';
+        const chips = `<span class="chip ${st}">Today <b>${st === 'win' ? 'Won' : st === 'loss' ? 'Lost' : st === 'live' ? 'In progress' : 'Open'}</b></span>`;
+        return `<article class="opp-card" data-o="${o.id}">
+          <div class="opp-top"><span class="gen-badge">${o.mechanics}</span><span class="opp-place">${o.place}</span></div>
+          <h2>${o.title}</h2>
+          <div class="opp-mons">${foeFor(o).map((m) => glyph(m.species, 38)).join('')}</div>
+          <p class="opp-desc">${o.gen === 4 ? 'Diamond, Pearl and Platinum rules. Physical/special split, no Fairy type.' : 'Omega Ruby and Alpha Sapphire rules. Fairy type, Mega Evolution and the Gen 6 type chart.'}</p>
+          <div class="chips">${chips}</div>
+          <button class="btn gold" data-go="${o.id}">Battle ${o.name}</button>
+        </article>`;
+      }).join('')}</div>
+      <p class="foot-note">New teams in <b class="countdown">--:--:--</b></p>`;
+    $('#home').querySelectorAll('[data-go]').forEach((b) => b.onclick = () => { Music.blip(); openLobby(C.OPP[b.dataset.go]); });
+    tick();
+  }
+  function goHome() { G = null; show('home'); renderHome(); Music.play('menu'); }
+
+  // ---------------- opponent lobby ----------------
+  function monCard(set, i, opts = {}) {
+    const sp = D.species.get(set.species);
+    return `<button class="mon${opts.lead ? ' is-lead' : ''}" data-i="${i}" ${opts.static ? 'disabled' : ''} aria-pressed="${!!opts.lead}">
+      <div class="mon-g">${glyph(set.species, 64)}</div>
+      <div class="mon-b">
+        <div class="mon-top"><span class="mon-name">${esc(sp.name)}</span><span class="mon-lv">Lv${opts.level || 100}</span>${opts.lead ? '<span class="lead-tag">LEAD</span>' : ''}${opts.ace ? '<span class="lead-tag ace">ACE</span>' : ''}</div>
+        <div class="mon-types">${sp.types.map(typeChip).join('')}</div>
+        <div class="mon-meta">${esc(itemName(D.toID(set.item)))} · ${esc(abilName(D.toID(set.ability)))}${set.nature ? ' · ' + set.nature : ''}</div>
+        <ul class="mon-moves">${set.moves.map((m) => { const mv = D.moves.get(m); return `<li style="--tc:${TYPE_COLOR[mv.type]}">${esc(mv.name)}</li>`; }).join('')}</ul>
+      </div>
+    </button>`;
+  }
+  function openLobby(o) { setOpp(o); show('lobby'); renderLobby(); Music.play('menu'); }
+  function renderLobby() {
+    const o = OPP;
+    const run = S.runs[runKey()];
+    const st = stat(o.id, diff);
+    const team = teamFor(o), foe = foeFor(o);
+    const lead = leads[o.id];
+    const L = o.levels;
+    const doneTxt = run && run.result ? (run.result === 'win' ? `You beat ${o.name} today.` : `${o.name} won today.`) : run ? 'Battle in progress.' : '';
+    $('#lobby').innerHTML = `
+      <button class="back" id="btn-back">← All opponents</button>
+      <section class="hero">
+        <p class="eyebrow">Day ${C.dayNumber(today)} · ${o.mechanics} rules · ${o.place} · Lv100</p>
+        <h1 class="opp-h">${o.title.replace(o.name, `<em>${o.name}</em>`)}</h1>
+        <div class="cta-row">
+          ${run && run.result
+            ? `<button class="btn gold" id="btn-result">See result</button><button class="btn" id="btn-practice">Practice battle</button>`
+            : `<button class="btn gold" id="btn-start">${run ? 'Resume battle' : 'Challenge ' + o.name}</button>`}
+          <span class="status-line">${doneTxt}</span>
+        </div>
+        <dl class="stats">
+          <div><dt>Wins</dt><dd>${st.w}</dd></div><div><dt>Losses</dt><dd>${st.l}</dd></div>
+          <div><dt>Streak</dt><dd>${st.streak}</dd></div><div><dt>Best</dt><dd>${st.best}</dd></div>
+          <div><dt>New teams in</dt><dd class="countdown">--:--:--</dd></div>
+        </dl>
+      </section>
+      <section>
+        <div class="sec-h"><h2>Your team</h2><p>${run ? 'Locked in for today.' : 'Tap a Pokémon to make it your lead.'}</p></div>
+        <div class="grid" id="team">${(run ? reorder(team, run.lead) : team).map((s, i) => monCard(s, i, {lead: run ? i === 0 : i === lead, static: !!run})).join('')}</div>
+      </section>
+      <section>
+        <div class="sec-h"><h2>${o.name}'s team</h2><p>Her ${o.origin} team in game order: ${foe[0].species} leads, ${foe[foe.length - 1].species} is the ace. Lv${L[diff]}.</p><button class="btn tiny" id="btn-foe-lobby">Full sets &amp; stats</button></div>
+        <div class="grid">${foe.map((s, i) => monCard(s, i, {static: true, level: L[diff], lead: i === 0, ace: i === foe.length - 1})).join('')}</div>
+      </section>
+      <section class="rules">
+        <h2>Rules</h2>
+        <ul>
+          <li>${o.gen === 4 ? 'Gen 4 mechanics from Pokémon Showdown\'s battle engine: the physical/special split, Gen 4 items, abilities and type chart.' : 'Gen 6 mechanics from Pokémon Showdown\'s battle engine: Fairy type, the updated Steel type, Mega Evolution, Gen 6 abilities and items.'}</li>
+          ${o.gen === 6 ? '<li>If your Pokémon holds its Mega Stone, a Mega Evolution button appears in the Fight menu. One Mega per battle.</li>' : ''}
+          <li>${o.name} plays to win: every turn she simulates her options against yours in the real engine and picks the strongest. She knows your sets, as you can see hers.</li>
+          <li>Your team: today's Gen ${o.gen} Random Battle sets, all at Lv100. No bag items.</li>
+          <li>Progress saves after every turn. New teams arrive at midnight, your local time.</li>
+        </ul>
+      </section>`;
+    $('#btn-back').onclick = () => { Music.blip(500); goHome(); };
+    if (!run) $('#lobby').querySelectorAll('#team .mon').forEach((b) => b.onclick = () => { leads[o.id] = +b.dataset.i; Music.blip(660); renderLobby(); });
+    const st1 = $('#btn-start'); if (st1) st1.onclick = () => startDaily();
+    const r1 = $('#btn-result'); if (r1) r1.onclick = () => showResult(run, 'daily');
+    const p1 = $('#btn-practice'); if (p1) p1.onclick = () => startPractice();
+    $('#btn-foe-lobby').onclick = () => openFoeTeam(false);
+    tick();
+  }
+  function tick() {
+    const els = document.querySelectorAll('.countdown'); if (!els.length) return;
+    const now = new Date(), mid = new Date(now); mid.setHours(24, 0, 0, 0);
+    const s = Math.max(0, Math.floor((mid - now) / 1000));
+    const z = (n) => String(n).padStart(2, '0');
+    els.forEach((el) => { el.textContent = `${z(Math.floor(s / 3600))}:${z(Math.floor(s / 60) % 60)}:${z(s % 60)}`; });
+    if (s === 0) setTimeout(() => location.reload(), 1500);
+  }
+  setInterval(tick, 1000);
+
+  // ---------------- battle ----------------
+  function startDaily() {
+    Music.unlock();
+    let run = S.runs[runKey()];
+    if (!run) { run = S.runs[runKey()] = {lead: leads[OPP.id], log: [], diff, day: today, opp: OPP.id}; save(); }
+    const foe = foeFor(OPP);
+    const b = C.newBattle(today, teamFor(OPP), run.lead, OPP.levels[diff], OPP, foe);
+    C.replay(b, run.log);
+    G = {b, mode: 'daily', run, foe, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
+    enterBattle(run.log.length > 0);
+  }
+  function startPractice() {
+    Music.unlock();
+    const seed = 'practice-' + Date.now();
+    const foe = C.oppTeam(seed, OPP);
+    const b = C.newBattle(seed, C.playerTeam(seed, OPP), 0, OPP.levels[diff], OPP, foe);
+    G = {b, mode: 'practice', run: {log: [], lead: 0, diff, opp: OPP.id}, foe, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
+    enterBattle(false);
+  }
+
+  async function enterBattle(resumed) {
+    show('battle');
+    $('.device').dataset.skin = OPP.skin;
+    $('#btn-foe').textContent = `${OPP.name}'s team`;
+    $('#bt-mode').textContent = `${G.mode === 'daily' ? 'Day ' + C.dayNumber(today) : 'Practice'} · ${OPP.name}`;
+    for (const s of ['p1', 'p2']) { $(`#box-${s}`).hidden = true; $(`#mon-${s}`).innerHTML = ''; }
+    G.busy = true;
+    const evs = C.toEvents(G.b.log, OPP);
+    G.logPos = G.b.log.length;
+    if (resumed) {
+      for (const e of evs) if (e.update) applyUpdate(e.update, true);
+      renderActives(true);
+      say('Battle resumed. What will ' + (G.disp.p1.name || 'you') + ' do?');
+      Music.play(currentMusicSlot());
+    } else {
+      Music.play(battleSlot(OPP), true);
+      $('#touch').innerHTML = '';
+      await typeText(`You are challenged by ${OPP.title}!`);
+      await wait(400);
+      await runEvents(evs);
+    }
+    G.busy = false;
+    nextPrompt();
+  }
+
+  function applyUpdate(u, instant) {
+    const d = u.side && G.disp[u.side];
+    switch (u.kind) {
+      case 'switch': Object.assign(d, {name: u.name, species: u.species, level: u.level, hp: u.hp, max: u.max, status: u.status === 'fnt' ? '' : u.status, fainted: false}); renderActives(instant, u.side); break;
+      case 'forme': d.species = u.species; renderActives(true, u.side); if (!instant) flash(u.side); break;
+      case 'hp': {
+        const before = d.hp;
+        d.hp = u.hp; if (u.status && u.status !== 'fnt') d.status = u.status;
+        renderHP(u.side, instant);
+        if (!instant && u.delta === '-damage' && before > u.hp) flash(u.side);
+        break;
+      }
+      case 'status': d.status = u.status; renderHP(u.side, true); break;
+      case 'faint': d.fainted = true; d.hp = 0; renderHP(u.side, true); faintAnim(u.side, instant); break;
+      case 'attack': if (!instant) lunge(u.side); break;
+      case 'turn': G.turn = u.turn; break;
+    }
+  }
+  function renderActives(instant, only) {
+    for (const side of ['p1', 'p2']) {
+      if (only && side !== only) continue;
+      const d = G.disp[side];
+      const slot = $(`#mon-${side}`);
+      if (!d.species) { slot.innerHTML = ''; continue; }
+      slot.innerHTML = glyph(d.species, side === 'p1' ? 150 : 118, {back: side === 'p1'});
+      slot.className = 'battler ' + side + (d.fainted ? ' fainted' : '') + (!instant ? ' enter' : '');
+      const box = $(`#box-${side}`);
+      box.hidden = false;
+      box.querySelector('.bx-name').textContent = d.name;
+      box.querySelector('.bx-lv').textContent = 'Lv' + d.level;
+      box.querySelector('.bx-mega').hidden = !D.species.get(d.species).isMega;
+      renderHP(side, true);
+      renderPartyBalls();
+    }
+  }
+  function renderHP(side, instant) {
+    const d = G.disp[side];
+    const box = $(`#box-${side}`);
+    const pct = d.max ? Math.max(0, d.hp / d.max) : 0;
+    const bar = box.querySelector('.hp-fill');
+    bar.style.transition = instant ? 'none' : '';
+    bar.style.width = (pct * 100).toFixed(1) + '%';
+    bar.dataset.lvl = pct > 0.5 ? 'g' : pct > 0.2 ? 'y' : 'r';
+    const st = box.querySelector('.bx-status');
+    st.textContent = d.fainted ? '' : (d.status || '').toUpperCase();
+    st.dataset.s = d.status || '';
+    const num = box.querySelector('.bx-hpnum');
+    if (num) tweenNum(num, d.hp, d.max, instant);
+  }
+  function tweenNum(el, to, max, instant) {
+    const from = +(el.dataset.v || to);
+    el.dataset.v = to;
+    if (instant || from === to) { el.textContent = `${to}/${max}`; return; }
+    const t0 = performance.now(), dur = 550;
+    const step = (t) => { const k = Math.min(1, (t - t0) / dur); el.textContent = `${Math.round(from + (to - from) * k)}/${max}`; if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+  function renderPartyBalls() {
+    for (const side of ['p1', 'p2']) {
+      const mons = G.b[side].pokemon.slice().sort((a, b) => a.position - b.position);
+      $(`#balls-${side}`).innerHTML = mons.map((p) => `<i class="ball ${p.fainted ? 'out' : p.status ? 'st' : ''}"></i>`).join('');
+    }
+  }
+  function flash(side) { const el = $(`#mon-${side}`); el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit'); }
+  function lunge(side) { const el = $(`#mon-${side}`); el.classList.remove('lunge'); void el.offsetWidth; el.classList.add('lunge'); Music.blip(side === 'p1' ? 520 : 390); }
+  function faintAnim(side, instant) { $(`#mon-${side}`).classList.add('fainted'); if (!instant) Music.blip(180); }
+
+  // text box
+  let skip = null;
+  const wait = (ms) => new Promise((r) => { const t = setTimeout(r, ms); skip = () => { clearTimeout(t); r(); }; });
+  function say(t) { $('#textbox-t').textContent = t; }
+  async function typeText(t) {
+    const el = $('#textbox-t');
+    const fast = S.music.speed === 'fast';
+    let fin = false;
+    skip = () => { fin = true; el.textContent = t; };
+    el.textContent = '';
+    for (let i = 0; i < t.length && !fin; i++) { el.textContent = t.slice(0, i + 1); await new Promise((r) => setTimeout(r, fast ? 6 : 16)); }
+    el.textContent = t;
+    await wait(fast ? 260 : 620);
+  }
+  async function runEvents(evs) {
+    for (const e of evs) {
+      if (e.update) applyUpdate(e.update, false);
+      if (e.update && e.update.kind === 'switch' && e.update.side === 'p2' && G.b.p2.pokemon.filter((p) => !p.fainted).length === 1) Music.play('pinch');
+      if (e.text) await typeText(e.text);
+      else if (e.update && e.update.kind === 'hp') await wait(350);
+    }
+  }
+
+  // ---------------- bottom screen ----------------
+  function nextPrompt() {
+    const b = G.b;
+    if (b.ended) return finish();
+    const r = b.p1.activeRequest;
+    precompute();
+    if (r.forceSwitch) { say('Choose a Pokémon to send out.'); return renderParty(true); }
+    say(`What will ${G.disp.p1.name} do?`);
+    renderMain();
+  }
+  function renderMain() {
+    $('#touch').innerHTML = `
+      <button class="t-fight" id="t-fight"><span>Fight</span></button>
+      <div class="t-row">
+        <button class="t-small t-bag" disabled title="No items in this challenge"><span>Bag</span><small>None</small></button>
+        <button class="t-small t-run" id="t-run"><span>Run</span><small>Forfeit</small></button>
+        <button class="t-small t-mon" id="t-mon"><span>Pokémon</span><small>${G.b.p1.pokemon.filter((p) => !p.fainted).length}/6</small></button>
+      </div>`;
+    $('#t-fight').onclick = () => { Music.blip(); renderFight(); };
+    $('#t-mon').onclick = () => { Music.blip(); renderParty(false); };
+    $('#t-run').onclick = () => { Music.blip(); renderRun(); };
+  }
+  function renderFight() {
+    const r = G.b.p1.activeRequest.active[0];
+    const canMega = !!r.canMegaEvo;
+    if (!canMega) G.mega = false;
+    $('#touch').innerHTML = `<div class="moves">${r.moves.map((m, i) => {
+      const mv = D.moves.get(m.id);
+      const out = m.disabled || (m.pp !== undefined && m.pp <= 0);
+      return `<button class="mv" style="--tc:${TYPE_COLOR[mv.type]}" data-i="${i + 1}" ${out ? 'disabled' : ''}>
+        <span class="mv-n">${esc(m.move)}</span>
+        <span class="mv-pp">PP ${m.pp ?? '-'}/${m.maxpp ?? '-'}</span>
+        <span class="mv-t"><i>${mv.type}</i><em>${mv.category === 'Status' ? 'Status' : mv.category}${mv.basePower ? ' ' + mv.basePower : ''}</em></span></button>`;
+    }).join('')}</div>
+    <div class="t-pair">${canMega ? `<button class="t-mega${G.mega ? ' on' : ''}" id="t-mega" aria-pressed="${G.mega}">Mega Evolution</button>` : ''}<button class="t-back" id="t-back">Back</button></div>`;
+    $('#touch').querySelectorAll('.mv').forEach((b) => b.onclick = () => choose('move ' + b.dataset.i + (G.mega ? ' mega' : '')));
+    $('#t-back').onclick = () => { Music.blip(500); renderMain(); };
+    if (canMega) $('#t-mega').onclick = () => { G.mega = !G.mega; Music.blip(G.mega ? 1200 : 600); renderFight(); };
+  }
+  function renderParty(forced) {
+    const r = G.b.p1.activeRequest;
+    const trapped = !forced && r.active && r.active[0].trapped;
+    $('#touch').innerHTML = `<div class="party">${G.b.p1.pokemon.map((p, i) => {
+      const pct = p.hp / p.maxhp;
+      return `<button class="pm${i === 0 && !forced ? ' cur' : ''}${p.fainted ? ' out' : ''}" data-i="${i}">
+        <span class="pm-g">${glyph(p.species.name, 40)}</span>
+        <span class="pm-n">${esc(p.species.name)}<small>${p.status ? p.status.toUpperCase() : ''}</small></span>
+        <span class="pm-hp"><i style="width:${(pct * 100).toFixed(0)}%" data-lvl="${pct > 0.5 ? 'g' : pct > 0.2 ? 'y' : 'r'}"></i></span>
+        <span class="pm-num">${p.hp}/${p.maxhp}</span></button>`;
+    }).join('')}</div>${forced ? '' : '<button class="t-back" id="t-back">Back</button>'}`;
+    $('#touch').querySelectorAll('.pm').forEach((b) => b.onclick = () => { Music.blip(); renderSummary(+b.dataset.i, forced, trapped); });
+    if (!forced) $('#t-back').onclick = () => { Music.blip(500); renderMain(); };
+  }
+  function renderSummary(i, forced, trapped) {
+    const p = G.b.p1.pokemon[i];
+    const canShift = !p.fainted && i > 0 && !trapped;
+    const st = p.storedStats;
+    $('#touch').innerHTML = `<div class="summ">
+      <div class="summ-h">${glyph(p.species.name, 56)}<div><b>${esc(p.species.name)}</b> <span class="mon-lv">Lv${p.level}</span><div class="mon-types">${p.getTypes().map(typeChip).join('')}</div>
+      <div class="mon-meta">${esc(itemName(p.item))} · ${esc(abilName(p.ability))}</div></div></div>
+      <div class="summ-stats"><span>HP <b>${p.hp}/${p.maxhp}</b></span><span>Atk <b>${st.atk}</b></span><span>Def <b>${st.def}</b></span><span>SpA <b>${st.spa}</b></span><span>SpD <b>${st.spd}</b></span><span>Spe <b>${st.spe}</b></span></div>
+      <ul class="mon-moves">${p.moveSlots.map((m) => `<li style="--tc:${TYPE_COLOR[D.moves.get(m.id).type]}">${esc(m.move)} <small>${m.pp}/${m.maxpp}</small></li>`).join('')}</ul>
+      ${trapped ? '<p class="note">You can\'t switch out right now.</p>' : ''}
+    </div>
+    <div class="t-pair">${canShift ? '<button class="t-go" id="t-shift">Shift</button>' : ''}<button class="t-back" id="t-back">Back</button></div>`;
+    if (canShift) $('#t-shift').onclick = () => choose('switch ' + (i + 1));
+    $('#t-back').onclick = () => { Music.blip(500); renderParty(forced); };
+  }
+  function renderRun() {
+    $('#touch').innerHTML = `<div class="confirm"><p>${G.mode === 'daily' ? 'Forfeiting counts as a loss for today.' : 'End this practice battle?'}</p>
+      <div class="t-pair"><button class="t-go warn" id="t-yes">Forfeit</button><button class="t-back" id="t-back">Back</button></div></div>`;
+    $('#t-yes').onclick = () => { G.b.lose('p1'); G.run.log.push(['lose', '']); persist(); finish(); };
+    $('#t-back').onclick = () => renderMain();
+  }
+  function persist() { if (G.mode === 'daily') save(); }
+
+  // ---------- opponent brain (worker keeps the page smooth) ----------
+  const Brain = (() => {
+    let w = null, ready = false, seq = 0;
+    const waiting = new Map();
+    try {
+      w = new Worker('src/ai-worker.js');
+      w.onmessage = (e) => {
+        if (e.data.ready) { ready = true; return; }
+        const f = waiting.get(e.data.id); if (f) { waiting.delete(e.data.id); f(e.data.choice); }
+      };
+      w.onerror = () => { w = null; for (const f of waiting.values()) f(null); waiting.clear(); };
+    } catch (e) { w = null; }
+    function local(json) { return new Promise((res) => setTimeout(() => { try { res(window.AI.decide(json).choice); } catch (e) { res(null); } }, 30)); }
+    function decide(b) {
+      const json = JSON.stringify(b.toJSON());
+      if (!w) return local(json);
+      return new Promise((res) => {
+        const id = ++seq;
+        const t = setTimeout(() => { if (waiting.has(id)) { waiting.delete(id); local(json).then(res); } }, ready ? 20000 : 45000);
+        waiting.set(id, (c) => { clearTimeout(t); res(c); });
+        w.postMessage({id, json});
+      });
+    }
+    return {decide};
+  })();
+  async function aiPick(b) {
+    if (G.pending && G.pending.pos === b.log.length && G.pending.turn === b.turn) { const p = G.pending.p; G.pending = null; return (await p) || C.aiChoice(b); }
+    return (await Brain.decide(b)) || C.aiChoice(b);
+  }
+  function precompute() { const b = G.b; if (!b.ended && C.needs(b.p2)) G.pending = {pos: b.log.length, turn: b.turn, p: Brain.decide(b)}; }
+
+  async function choose(c) {
+    if (G.busy) return;
+    G.busy = true;
+    Music.blip(990);
+    $('#touch').innerHTML = '<div class="waiting"><span></span><span></span><span></span></div>';
+    const b = G.b, made = [];
+    try {
+      if (C.needs(b.p2) && !b.ended) { const a = await aiPick(b); b.choose('p2', a); made.push(['p2', a]); }
+      b.choose('p1', c); made.push(['p1', c]);
+      let guard = 0;
+      while (!b.ended && C.needs(b.p2) && !C.needs(b.p1) && guard++ < 10) { const a = await aiPick(b); b.choose('p2', a); made.push(['p2', a]); }
+    } catch (e) { console.error(e); }
+    if (c.endsWith(' mega')) G.mega = false;
+    G.run.log.push(...made);
+    persist();
+    const lines = G.b.log.slice(G.logPos);
+    G.logPos = G.b.log.length;
+    await runEvents(C.toEvents(lines, OPP));
+    G.busy = false;
+    if (!G.b.ended) Music.play(currentMusicSlot());
+    nextPrompt();
+  }
+
+  function finish() {
+    const b = G.b;
+    const won = b.winner === 'You';
+    const hpList = (side) => b[side].pokemon.slice().sort((x, y) => x.position - y.position).map((p) => [p.species.name, p.fainted ? 0 : Math.max(1, Math.round(100 * p.hp / p.maxhp))]);
+    const result = {result: won ? 'win' : 'loss', turns: b.turn, left: b.p1.pokemon.filter((p) => !p.fainted).length,
+      foeLeft: b.p2.pokemon.filter((p) => !p.fainted).length, mine: hpList('p1'), foe: hpList('p2'), opp: OPP.id, diff, day: today};
+    Music.play(won ? 'victory' : 'defeat', true);
+    if (G.mode === 'daily' && !G.run.result) {
+      Object.assign(G.run, result);
+      const st = stat(OPP.id, diff);
+      if (won) { st.w++; st.streak++; st.best = Math.max(st.best, st.streak); } else { st.l++; st.streak = 0; }
+      st.lastDay = today;
+      save();
+    }
+    say(won ? `You defeated ${OPP.title}!` : 'You are out of usable Pokémon!');
+    $('#touch').innerHTML = `<button class="t-fight" id="t-res"><span>${won ? 'Victory' : 'Defeat'}</span><small>See result</small></button>`;
+    $('#t-res').onclick = () => showResult(G.mode === 'daily' ? G.run : result, G.mode);
+    setTimeout(() => { if (document.body.dataset.view === 'battle' && G) showResult(G.mode === 'daily' ? G.run : result, G.mode); }, 1800);
+  }
+
+  // ---------------- result ----------------
+  function shareText(run) {
+    const o = C.OPP[run.opp] || OPP;
+    const sq = (hp) => hp === 0 ? '⬛' : hp > 50 ? '🟩' : hp > 20 ? '🟨' : '🟥';
+    return `Champion Daily #${C.dayNumber(run.day || today)} · ${o.name}\n` +
+      `${run.result === 'win' ? 'Won' : 'Lost'} in ${run.turns} turns\n` +
+      `Me  ${run.mine.map((m) => sq(m[1])).join('')}\n${o.name.slice(0, 3)} ${run.foe.map((m) => sq(m[1])).join('')}`;
+  }
+  function showResult(run, mode) {
+    if (!run || !run.mine) return;
+    const o = C.OPP[run.opp] || OPP;
+    const M = $('#modal');
+    const won = run.result === 'win';
+    const txt = mode === 'daily' ? shareText(run) : null;
+    M.innerHTML = `<div class="sheet result" role="dialog" aria-modal="true" aria-labelledby="res-h">
+      <p class="eyebrow">${mode === 'daily' ? 'Day ' + C.dayNumber(run.day || today) : 'Practice'} · ${o.name}</p>
+      <h2 id="res-h">${won ? `${o.name} defeated` : `${o.name} wins`}</h2>
+      <p>${won ? `${run.left} of your Pokémon still standing after ${run.turns} turns.` : `${o.name} had ${run.foeLeft} left after ${run.turns} turns.`}</p>
+      <div class="res-teams">
+        <div><h3>You</h3>${run.mine.map(([n, hp]) => `<div class="res-row${hp ? '' : ' out'}">${glyph(n, 28)}<span>${esc(n)}</span><i><b style="width:${hp}%"></b></i></div>`).join('')}</div>
+        <div><h3>${o.name}</h3>${run.foe.map(([n, hp]) => `<div class="res-row${hp ? '' : ' out'}">${glyph(n, 28)}<span>${esc(n)}</span><i><b style="width:${hp}%"></b></i></div>`).join('')}</div>
+      </div>
+      ${txt ? `<pre class="share" id="share-t">${esc(txt)}</pre>` : ''}
+      <div class="cta-row">
+        ${txt ? '<button class="btn gold" id="btn-copy">Copy result</button>' : ''}
+        <button class="btn" id="btn-again">${mode === 'daily' ? 'Practice battle' : 'Practice again'}</button>
+        <button class="btn ghost" id="btn-lobby">Back to ${o.name}</button>
+      </div></div>`;
+    M.hidden = false;
+    const cp = $('#btn-copy');
+    if (cp) cp.onclick = () => {
+      navigator.clipboard.writeText(txt).then(() => { cp.textContent = 'Copied'; }).catch(() => {
+        const r = document.createRange(); r.selectNodeContents($('#share-t')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); cp.textContent = 'Selected, copy it';
+      });
+    };
+    $('#btn-again').onclick = () => { M.hidden = true; setOpp(o); startPractice(); };
+    $('#btn-lobby').onclick = () => { M.hidden = true; G = null; openLobby(o); };
+  }
+
+  // ---------------- opponent team viewer ----------------
+  const STAT_LABEL = {hp: 'HP', atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe'};
+  function openFoeTeam(inBattle) {
+    const live = inBattle && G && G.b;
+    const sets = live ? G.foe : foeFor(OPP);
+    const src = live ? G.b : C.newBattle(today, teamFor(OPP), 0, OPP.levels[diff], OPP, sets);
+    const mons = sets.map((set) => src.p2.pokemon.find((p) => p.baseSpecies.baseSpecies === D.species.get(set.species).baseSpecies));
+    const active = live && G.b.p2.active[0];
+    const left = mons.filter((p) => !p.fainted).length;
+    const M = $('#modal');
+    M.innerHTML = `<div class="sheet foe" role="dialog" aria-modal="true" aria-labelledby="foe-h">
+      <div class="foe-head"><div><p class="eyebrow">${OPP.mechanics} · Lv${mons[0].level}${live ? ` · ${left} of ${mons.length} left` : ''}</p><h2 id="foe-h">${OPP.name}'s team</h2></div>
+      <button class="btn tiny ghost" id="foe-close">Close</button></div>
+      <div class="foe-tabs" role="tablist">${mons.map((p, i) => `<button role="tab" id="foe-tab-${i}" aria-selected="${i === 0}" data-i="${i}" class="${p.fainted ? 'out' : ''}">
+        ${glyph(p.species.name, 34)}<span>${esc(p.species.name.replace('-Mega', ''))}</span>${p === active ? '<i class="dot" title="In battle"></i>' : ''}</button>`).join('')}</div>
+      <div id="foe-body"></div>
+    </div>`;
+    M.hidden = false;
+    const showMon = (i) => {
+      const p = mons[i], set = sets[i];
+      const nat = D.natures.get(set.nature);
+      const hpPct = p.fainted ? 0 : p.hp / p.maxhp;
+      const max = Math.max(...Object.values(p.storedStats), p.maxhp);
+      $('#foe-body').innerHTML = `
+        <div class="foe-card">
+          <div class="foe-top">${glyph(p.species.name, 72)}<div>
+            <div class="mon-top"><span class="mon-name">${esc(p.species.name)}</span><span class="mon-lv">Lv${p.level}</span>${i === 0 ? '<span class="lead-tag">LEAD</span>' : ''}${i === sets.length - 1 ? '<span class="lead-tag ace">ACE</span>' : ''}</div>
+            <div class="mon-types">${p.getTypes().map(typeChip).join('')}</div>
+            <div class="mon-meta">${esc(set.item)} · ${esc(p.species.isMega ? abilName(p.ability) : set.ability)} · ${set.nature}</div>
+            ${live ? `<div class="foe-hp"><i><b style="width:${(hpPct * 100).toFixed(0)}%" data-lvl="${hpPct > 0.5 ? 'g' : hpPct > 0.2 ? 'y' : 'r'}"></b></i><span>${p.fainted ? 'Fainted' : Math.round(hpPct * 100) + '%'}${p.status && !p.fainted ? ' · ' + p.status.toUpperCase() : ''}</span></div>` : ''}
+          </div></div>
+          <h3>Stats</h3>
+          <div class="foe-stats">${['hp', 'atk', 'def', 'spa', 'spd', 'spe'].map((k) => {
+            const v = k === 'hp' ? p.maxhp : p.storedStats[k];
+            const mark = nat.plus === k ? 'up' : nat.minus === k ? 'down' : '';
+            return `<div class="fs ${mark}"><span>${STAT_LABEL[k]}</span><i><b style="width:${(100 * v / max).toFixed(0)}%"></b></i><em>${v}</em><small>${set.evs[k] ? set.evs[k] + ' EV' : ''}</small></div>`;
+          }).join('')}</div>
+          <h3>Moves</h3>
+          <ul class="foe-moves">${set.moves.map((m) => { const mv = D.moves.get(m); return `<li style="--tc:${TYPE_COLOR[mv.type]}">
+            <div class="fm-top"><b>${esc(mv.name)}</b>${typeChip(mv.type)}</div>
+            <div class="fm-data">${mv.category}${mv.basePower ? ' · ' + mv.basePower + ' BP' : ''}${mv.accuracy === true ? '' : ' · ' + mv.accuracy + '%'}${mv.priority ? ' · +' + mv.priority + ' priority' : ''} · ${mv.pp * 8 / 5} PP</div>
+            <p>${esc(mv.shortDesc || mv.desc || '')}</p></li>`; }).join('')}</ul>
+          <p class="note">IVs 31. Nature: ${nat.plus ? `<span class="up-t">+${STAT_LABEL[nat.plus]}</span> <span class="down-t">−${STAT_LABEL[nat.minus]}</span>` : 'neutral'}${p.species.isMega ? '. Stats shown after Mega Evolution.' : ''}</p>
+        </div>`;
+      M.querySelectorAll('.foe-tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.i == i));
+    };
+    M.querySelectorAll('.foe-tabs button').forEach((b) => b.onclick = () => { Music.blip(); showMon(+b.dataset.i); });
+    $('#foe-close').onclick = () => { M.hidden = true; };
+    showMon(active ? Math.max(0, mons.indexOf(active)) : 0);
+  }
+  $('#btn-foe').onclick = () => openFoeTeam(true);
+  $('#box-p2').onclick = () => openFoeTeam(true);
+  $('#balls-p2').onclick = () => openFoeTeam(true);
+
+  // ---------------- settings ----------------
+  function sourceOptions(sel) {
+    const b = Object.entries(BUILTIN).map(([k, v]) => `<option value="b:${k}" ${sel === 'b:' + k ? 'selected' : ''}>${esc(v.label)}</option>`).join('');
+    const u = S.lib.map((t) => `<option value="u:${t.id}" ${sel === 'u:' + t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
+    return `<optgroup label="Built-in (original chiptunes)">${b}</optgroup>${u ? `<optgroup label="Your tracks">${u}</optgroup>` : ''}<option value="off" ${sel === 'off' ? 'selected' : ''}>Off</option>`;
+  }
+  function openSettings() {
+    const M = $('#modal');
+    M.innerHTML = `<div class="sheet settings" role="dialog" aria-modal="true" aria-labelledby="set-h">
+      <div class="foe-head"><h2 id="set-h">Settings</h2><button class="btn tiny ghost" id="set-x">Close</button></div>
+      <h3>Sound</h3>
+      <div class="set-row"><label for="mute">Mute everything</label><input type="checkbox" id="mute" ${S.music.muted ? 'checked' : ''}></div>
+      <div class="set-row"><label for="vol">Music volume</label><input type="range" id="vol" min="0" max="1" step="0.05" value="${S.music.vol}"></div>
+      <div class="set-row"><label for="sfx">Menu sounds</label><input type="checkbox" id="sfx" ${S.music.sfx !== false ? 'checked' : ''}></div>
+      <div class="set-row"><label for="spd">Text speed</label><select id="spd"><option value="normal">Normal</option><option value="fast" ${S.music.speed === 'fast' ? 'selected' : ''}>Fast</option></select></div>
+      <h3>Music</h3>
+      ${Object.keys(SLOT_LABEL).map((k) => `<div class="set-row slot-row"><label for="slot-${k}">${SLOT_LABEL[k]}</label>
+        <div class="slot-ctl"><select id="slot-${k}" data-k="${k}">${sourceOptions(S.music.slots[k])}</select><button class="btn tiny ghost" data-preview="${k}" aria-label="Preview ${SLOT_LABEL[k]}">▶</button></div></div>`).join('')}
+      <h3>Your tracks</h3>
+      <p class="note">Add audio files from your device, then pick them in any dropdown above. Name them however you like; they stay in this browser only.</p>
+      <ul class="lib">${S.lib.map((t) => `<li><input type="text" id="lib-${t.id}" data-id="${t.id}" value="${esc(t.name)}" aria-label="Track name"><button class="btn tiny ghost" data-del="${t.id}">Remove</button></li>`).join('') || '<li class="empty">No tracks yet.</li>'}</ul>
+      <div class="cta-row"><label class="btn" for="lib-add">Add audio files</label><input type="file" id="lib-add" accept="audio/*" multiple hidden><span class="fname" id="lib-msg"></span></div>
+      <div class="cta-row"><button class="btn gold" id="set-done">Done</button></div>
+    </div>`;
+    M.hidden = false;
+    const resume = () => Music.play(currentMusicSlot(), true);
+    $('#mute').onchange = (e) => { S.music.muted = e.target.checked; save(); setMuteBtn(); if (S.music.muted) Music.stop(); else { Music.unlock(); resume(); } };
+    $('#vol').oninput = (e) => { Music.setVol(+e.target.value); save(); };
+    $('#sfx').onchange = (e) => { S.music.sfx = e.target.checked; save(); };
+    $('#spd').onchange = (e) => { S.music.speed = e.target.value; save(); };
+    M.querySelectorAll('select[data-k]').forEach((sel) => sel.onchange = () => { S.music.slots[sel.dataset.k] = sel.value; save(); if (currentMusicSlot() === sel.dataset.k) resume(); });
+    M.querySelectorAll('[data-preview]').forEach((b) => b.onclick = () => { Music.unlock(); Music.preview(S.music.slots[b.dataset.preview]); });
+    M.querySelectorAll('.lib input[type=text]').forEach((inp) => inp.onchange = () => { const t = S.lib.find((x) => x.id === inp.dataset.id); if (t) { t.name = inp.value.trim() || t.name; save(); openSettings(); } });
+    M.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
+      const id = b.dataset.del;
+      await Music.delTrack(id);
+      S.lib = S.lib.filter((t) => t.id !== id);
+      for (const k of Object.keys(S.music.slots)) if (S.music.slots[k] === 'u:' + id) S.music.slots[k] = DEFAULT_SLOTS[k];
+      save(); openSettings();
+    });
+    $('#lib-add').onchange = async (e) => {
+      const files = [...e.target.files];
+      let added = 0;
+      for (const f of files) { const id = await Music.addTrack(f); if (id) { S.lib.push({id, name: f.name.replace(/\.[^.]+$/, '')}); added++; } }
+      save();
+      if (added) openSettings(); else $('#lib-msg').textContent = 'This browser blocked saving the files.';
+    };
+    $('#set-x').onclick = $('#set-done').onclick = () => { M.hidden = true; if (Music.slot === '__preview' || !Music.slot) resume(); };
+  }
+
+  function setMuteBtn() { $('#btn-mute').textContent = S.music.muted ? 'Sound off' : 'Sound on'; $('#btn-mute').setAttribute('aria-pressed', !S.music.muted); }
+  $('#btn-mute').onclick = () => {
+    S.music.muted = !S.music.muted; save(); setMuteBtn();
+    if (S.music.muted) Music.stop(); else { Music.unlock(); Music.play(currentMusicSlot(), true); }
+  };
+  $('#btn-settings').onclick = openSettings;
+  $('#btn-about').onclick = () => { Music.blip(); if (G && !G.b.ended) G = G; show('about'); };
+  $('#about-back').onclick = () => { if (G && !G.b.ended) show('battle'); else goHome(); };
+  $('#btn-home').onclick = () => goHome();
+  $('#textbox').onclick = () => { if (skip) skip(); };
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !$('#modal').hidden) { $('#modal').hidden = true; return; }
+    if (document.body.dataset.view !== 'battle' || !G || G.busy) { if ((e.key === ' ' || e.key === 'Enter') && skip && G && G.busy) skip(); return; }
+    if (/^[1-4]$/.test(e.key) && !G.b.ended && !G.b.p1.activeRequest.forceSwitch && $('#modal').hidden) {
+      const m = G.b.p1.activeRequest.active[0].moves[+e.key - 1];
+      if (m && !m.disabled && m.pp !== 0) choose('move ' + e.key + (G.mega ? ' mega' : ''));
+    }
+  });
+  $('#modal').onclick = (e) => { if (e.target.id === 'modal') e.target.hidden = true; };
+  let unlocked = false;
+  document.addEventListener('pointerdown', () => { if (unlocked) return; unlocked = true; if (!S.music.muted) { Music.unlock(); if (!Music.slot || Music.slot === currentMusicSlot()) Music.play(currentMusicSlot(), true); } });
+
+  setMuteBtn();
+  $('#loading').hidden = true;
+  goHome();
+})();
