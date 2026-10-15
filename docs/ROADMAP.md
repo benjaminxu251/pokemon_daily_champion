@@ -16,6 +16,15 @@ Reference: [Daily Red Game](https://dailyredgame.org/), the project that inspire
 - Replace the stat glyphs with real Pokémon visuals. This needs art we have the rights to ship: commissioned or original pixel art, or a sprite source with a license that allows redistribution.
 - Until then, improve the glyphs: per-type textures, idle animation, and attack and faint animations.
 - Trainer portraits for the lobby and the battle intro, with the same licensing requirement.
+- Full battle UI art for every battle style:
+  - battle backgrounds and platforms
+  - the option select menu (Fight, Bag, Pokémon, Run)
+  - the move menu
+  - the Pokémon-remaining indicators (party balls)
+  - the HP and level displays
+  - the text box
+  - the party and summary screens
+- Champion encounter intro, like the games: a transition into the battle, the champion's entrance and intro line, then her lead Pokémon sent out. Each battle style gets its own version. This uses original art under the same licensing requirement.
 
 ## Draft mode
 
