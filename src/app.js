@@ -11,7 +11,7 @@
   function readKey(k) { try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage blocked */ } }
   const DEFAULT_SLOTS = {menu: 'b:menu', battle_cynthia: 'b:hall', battle_zinnia: 'b:sky', battle_e4: 'b:league', pinch: 'b:pinch', victory: 'b:victory', defeat: 'b:defeat'};
-  const S = Object.assign({stats: {}, runs: {}, music: {vol: 0.5, speed: 'normal'}, lib: [], style: 'default'}, readKey(KEY) || {});
+  const S = Object.assign({stats: {}, runs: {}, music: {vol: 0.5, speed: 'normal'}, lib: [], style: 'default', art: 'sprites'}, readKey(KEY) || {});
   // Bump RULES whenever teams, levels or battle rules change. A saved battle is a replayed choice log,
   // so an unfinished run from older rules would replay into a different battle; it restarts instead.
   const RULES = 5;
@@ -28,7 +28,29 @@
   // Player character: the protagonist of the opponent's game, by chosen gender.
   const PROTAG = {cynthia: {male: 'Lucas', female: 'Dawn'}, zinnia: {male: 'Brendan', female: 'May'}, e4: {male: 'Florian', female: 'Juliana'}};
   const protagFor = (o) => (PROTAG[o.member || o.id === 'e4' ? 'e4' : o.id] || PROTAG.cynthia)[S.player === 'female' ? 'female' : 'male'];
-  const protagArt = (o, view, size) => window.Scenes.trainer(protagFor(o).toLowerCase(), view, size);
+  // Trainer sprites are linked from Showdown like the Pokémon sprites; protagonists fall back to the drawn trainers.
+  const PROTAG_SPR = {lucas: 'lucas-gen4pt', dawn: 'dawn-gen4pt', brendan: 'brendan', may: 'may', florian: 'florian-s', juliana: 'juliana-s'};
+  const TR_SUFFIX = {gen3: '-gen3', dppt: '-gen4', oras: '-gen6', sv: ''};
+  function trSprite(names, size, fallback) {
+    const urls = [...new Set(names)].map((n) => SPR + 'trainers/' + n + '.png');
+    return `<img class="trsp" src="${urls[0]}" data-fb="${urls.slice(1).join(' ')}" data-tfb="${fallback || ''}" data-size="${size}" width="${size}" height="${size}" alt="" onerror="__trFail(this)">`;
+  }
+  window.__trFail = (img) => {
+    const [next, ...rest] = img.dataset.fb.split(' ').filter(Boolean);
+    if (next) { img.dataset.fb = rest.join(' '); img.src = next; return; }
+    const k = img.dataset.tfb;
+    if (k) img.outerHTML = window.Scenes.trainer(k, 'front', +img.dataset.size); else img.remove();
+  };
+  const protagArt = (o, view, size) => {
+    const k = protagFor(o).toLowerCase();
+    return S.art === 'drawn' ? window.Scenes.trainer(k, view, size) : trSprite([PROTAG_SPR[k]], size, k);
+  };
+  // Opponent trainer: the battle style's era variant first, then the plain and older sprites.
+  const oppArt = (o, size) => {
+    if (S.art === 'drawn') return '';
+    const id = o.member ? o.member.id : o.id;
+    return trSprite([id + TR_SUFFIX[skinFor(o)], id, id + '-gen3', id + '-gen1'], size);
+  };
   const styleNote = (o) => '<button class="btn tiny ghost style-note" data-style-open>' + protagArt(o, 'front', 30) + 'Battle style: ' + SKIN_LABEL[skinFor(o)] + (S.style === 'default' ? ' (default)' : '') + ' · Playing as ' + protagFor(o) + '</button>';
   S.music.slots = Object.assign({}, DEFAULT_SLOTS, S.music.slots);
   if (!readKey(KEY)) { // carry over records from the first version
@@ -44,7 +66,32 @@
   function setOpp(o) { OPP = o; D = C.dexFor(o.gen); }
 
   // ---------------- Pokémon art (src/art.js) ----------------
-  const glyph = (species, size, opts = {}) => window.Art.draw(species, opts.dex || D, size, Object.assign({fit: !opts.battle}, opts));
+  const drawn = (species, size, opts = {}) => window.Art.draw(species, opts.dex || D, size, Object.assign({fit: !opts.battle}, opts));
+  // Official sprites are linked from Pokémon Showdown's sprite server, never stored in this repo.
+  // Each battle style tries its era's sprite set first, then newer sets, then falls back to the drawn art.
+  const SPR = 'https://play.pokemonshowdown.com/sprites/';
+  const SPR_SETS = {gen3: ['gen3', 'gen4', 'gen5', 'ani'], dppt: ['gen4', 'gen5', 'ani'], oras: ['ani', 'gen5'], sv: ['ani', 'gen5'], thumb: ['gen5', 'ani']};
+  // Natural sprite width -> share of the battle screen's width (cqw). Pixel sets sit on a 256px-wide screen.
+  const SPR_SCALE = {gen3: 256, gen4: 256, gen5: 290, ani: 400};
+  function glyph(species, size, opts = {}) {
+    if (S.art === 'drawn') return drawn(species, size, opts);
+    const dex = opts.dex || D, sp = dex.species.get(species);
+    const sets = opts.battle ? SPR_SETS[skinFor(OPP)] : SPR_SETS.thumb;
+    const urls = sets.map((s) => SPR + s + (opts.back ? '-back' : '') + '/' + sp.spriteid + (s === 'ani' ? '.gif' : '.png'));
+    return `<img class="glyph spr${opts.battle ? '' : ' thumb'}" src="${urls[0]}" data-fb="${urls.slice(1).join(' ')}" data-sp="${esc(sp.name)}" data-gen="${dex.gen}" data-size="${size}"${opts.back ? ' data-back="1"' : ''}${opts.battle ? ' data-battle="1"' : ''} width="${size}" height="${size}" alt="${esc(sp.name)}" onerror="__sprFail(this)" onload="__sprLoad(this)">`;
+  }
+  window.__sprFail = (img) => {
+    const [next, ...rest] = img.dataset.fb.split(' ').filter(Boolean);
+    if (next) { img.dataset.fb = rest.join(' '); img.src = next; return; }
+    const d = img.dataset;
+    img.outerHTML = drawn(d.sp, +d.size, {dex: C.dexFor(+d.gen), back: !!d.back, battle: !!d.battle});
+  };
+  window.__sprLoad = (img) => {
+    if (!img.dataset.battle) return;
+    const set = img.src.split('/sprites/')[1].split('/')[0].replace('-back', '');
+    img.style.width = (100 * img.naturalWidth / SPR_SCALE[set]).toFixed(1) + 'cqw';
+    img.style.height = 'auto';
+  };
   const typeChip = (t) => `<span class="type" style="--tc:${TYPE_COLOR[t]}">${t}</span>`;
   const itemName = (x) => x ? D.items.get(x).name : 'None';
   const abilName = (x) => D.abilities.get(x).name;
@@ -192,6 +239,7 @@
   };
   const foeFor = (o) => foes[o.id] || (foes[o.id] = o.member ? E4.team(today, o.member) : C.oppTeam(today, o));
   const leads = {cynthia: 0, zinnia: 0, e4: 0};
+  const pleads = {}; // practice leads, per opponent
   const LINEUP = E4.lineup(today);
   const E4KEY = `${today}:e4`;
   let G = null;
@@ -256,11 +304,14 @@
     const run = S.runs[runKey()];
     const st = stat(o.id, diff);
     const team = teamFor(o), foe = foeFor(o);
-    const lead = leads[o.id];
+    const done = !!(run && run.result);
+    // After today's battle, the grid picks the practice lead (defaults to today's lead).
+    const lead = done ? (pleads[o.id] ?? run.lead) : leads[o.id];
     const doneTxt = run && run.result ? (run.result === 'win' ? `You beat ${o.name} today.` : `${o.name} won today.`) : run ? 'Battle in progress.' : '';
     $('#lobby').innerHTML = `
       <button class="back" id="btn-back">← All opponents</button>
       <section class="hero">
+        <div class="hero-tr">${oppArt(o, 120)}</div>
         <p class="eyebrow">Day ${C.dayNumber(today)} · Gen ${o.gen} battle rules · ${o.place} · ${LV}</p>
         <h1 class="opp-h">${o.title.replace(o.name, `<em>${o.name}</em>`)}</h1>
         <div class="cta-row">
@@ -276,8 +327,8 @@
         </dl>
       </section>
       <section>
-        <div class="sec-h"><h2>Your team</h2><p>${run ? 'Locked in for today.' : 'Tap a Pokémon to make it your lead.'}</p></div>
-        <div class="grid" id="team">${(run ? reorder(team, run.lead) : team).map((s, i) => monCard(s, i, {lead: run ? i === 0 : i === lead, static: !!run})).join('')}</div>
+        <div class="sec-h"><h2>Your team</h2><p>${done ? `You led with ${esc(team[run.lead].species)} today. Tap a Pokémon to lead your practice battle.` : run ? 'Locked in for today.' : 'Tap a Pokémon to make it your lead.'}</p></div>
+        <div class="grid" id="team">${(run && !done ? reorder(team, run.lead) : team).map((s, i) => monCard(s, i, {lead: run && !done ? i === 0 : i === lead, static: !!run && !done})).join('')}</div>
       </section>
       <section>
         <div class="sec-h"><h2>${o.name}'s team</h2><p>Her ${o.origin} team in game order: ${foe[0].species} leads, ${foe[foe.length - 1].species} is the ace. ${LV}.</p><button class="btn tiny" id="btn-foe-lobby">Full sets &amp; stats</button></div>
@@ -294,10 +345,10 @@
         </ul>
       </section>`;
     $('#btn-back').onclick = () => { Music.blip(500); goHome(); };
-    if (!run) $('#lobby').querySelectorAll('#team .mon').forEach((b) => b.onclick = () => { leads[o.id] = +b.dataset.i; Music.blip(660); renderLobby(); });
+    if (!run || done) $('#lobby').querySelectorAll('#team .mon').forEach((b) => b.onclick = () => { (done ? pleads : leads)[o.id] = +b.dataset.i; Music.blip(660); renderLobby(); });
     const st1 = $('#btn-start'); if (st1) st1.onclick = () => startDaily();
     const r1 = $('#btn-result'); if (r1) r1.onclick = () => showResult(run, 'daily');
-    const p1 = $('#btn-practice'); if (p1) p1.onclick = () => startPractice();
+    const p1 = $('#btn-practice'); if (p1) p1.onclick = () => startPractice(lead);
     $('#btn-foe-lobby').onclick = () => openFoeTeam(false);
     tick();
   }
@@ -344,16 +395,19 @@
     $('#lp-go').onclick = () => { M.hidden = true; onGo(lead); };
     $('#lp-cancel').onclick = () => { M.hidden = true; };
   }
-  function startPractice() {
+  function startPractice(lead) {
     const seed = 'practice-' + Date.now();
     const team = teamFor(OPP), done = S.runs[runKey()];
-    chooseLead(team, done ? done.lead : leads[OPP.id], 'Practice · ' + OPP.name, "Today's team", (lead) => {
+    const go = (lead) => {
+      pleads[OPP.id] = lead;
       Music.unlock();
       const foe = foeFor(OPP);
       const b = C.newBattle(seed, team, lead, null, OPP, foe);
       G = {b, mode: 'practice', run: {log: [], lead, diff, opp: OPP.id}, foe, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
       enterBattle(false);
-    });
+    };
+    if (lead != null) go(lead);
+    else chooseLead(team, pleads[OPP.id] ?? (done ? done.lead : leads[OPP.id]), 'Practice · ' + OPP.name, "Today's team", go);
   }
 
   async function enterBattle(resumed) {
@@ -375,15 +429,15 @@
     } else {
       Music.play(battleSlot(OPP), true);
       $('#touch').innerHTML = '';
-      $('#mon-p1').innerHTML = protagArt(OPP, 'back', 130);
-      $('#mon-p1').classList.add('enter');
+      const intro = [$('#mon-p1'), $('#mon-p2')];
+      intro[0].innerHTML = protagArt(OPP, 'back', 130);
+      intro[1].innerHTML = oppArt(OPP, 130);
+      intro.forEach((el) => el.classList.add('enter'));
       await typeText(`${protagFor(OPP)} is challenged by ${OPP.title}!`);
       await wait(400);
-      $('#mon-p1').classList.remove('enter');
-      $('#mon-p1').classList.add('leave');
+      intro.forEach((el) => { el.classList.remove('enter'); el.classList.add('leave'); });
       await wait(350);
-      $('#mon-p1').classList.remove('leave');
-      $('#mon-p1').innerHTML = '';
+      intro.forEach((el) => { el.classList.remove('leave'); el.innerHTML = ''; });
       await runEvents(evs);
     }
     G.busy = false;
@@ -636,7 +690,7 @@
     const o = C.OPP[run.opp] || OPP;
     const sq = (hp) => hp === 0 ? '⬛' : hp > 50 ? '🟩' : hp > 20 ? '🟨' : '🟥';
     return `Champion Daily #${C.dayNumber(run.day || today)} · ${o.name}\n` +
-      `${run.result === 'win' ? 'Won' : 'Lost'} in ${run.turns} turns\n` +
+      `${run.result === 'win' ? 'Won' : 'Lost'} in ${run.turns} turn${run.turns === 1 ? "" : "s"}\n` +
       `Me  ${run.mine.map((m) => sq(m[1])).join('')}\n${o.name.slice(0, 3)} ${run.foe.map((m) => sq(m[1])).join('')}`;
   }
   function showResult(run, mode) {
@@ -648,7 +702,7 @@
     M.innerHTML = `<div class="sheet result" role="dialog" aria-modal="true" aria-labelledby="res-h">
       <p class="eyebrow">${mode === 'daily' ? 'Day ' + C.dayNumber(run.day || today) : 'Practice'} · ${o.name}</p>
       <h2 id="res-h">${won ? `${o.name} defeated` : `${o.name} wins`}</h2>
-      <p>${won ? `${run.left} of your Pokémon still standing after ${run.turns} turns.` : `${o.name} had ${run.foeLeft} left after ${run.turns} turns.`}</p>
+      <p>${won ? `${run.left} of your Pokémon still standing after ${run.turns} turn${run.turns === 1 ? "" : "s"}.` : `${o.name} had ${run.foeLeft} left after ${run.turns} turn${run.turns === 1 ? "" : "s"}.`} You led with <b>${esc(teamFor(o)[run.lead].species)}</b>.</p>
       <div class="res-teams">
         <div><h3>You</h3>${run.mine.map(([n, hp]) => `<div class="res-row${hp ? '' : ' out'}">${glyph(n, 28)}<span>${esc(n)}</span><i><b style="width:${hp}%"></b></i></div>`).join('')}</div>
         <div><h3>${o.name}</h3>${run.foe.map(([n, hp]) => `<div class="res-row${hp ? '' : ' out'}">${glyph(n, 28)}<span>${esc(n)}</span><i><b style="width:${hp}%"></b></i></div>`).join('')}</div>
@@ -749,6 +803,8 @@
     const lead = r ? r.lead : leads.e4;
     // The lead can change before each fight; a fight's lead is fixed once it starts.
     const pickable = !r || (r.status === 'live' && !(r.fights[r.stage] && r.fights[r.stage].log.length));
+    const over = !!r && r.status !== 'live';
+    const shownLead = over ? (pleads.e4 ?? r.lead) : lead;
     const stageOf = (i) => {
       if (!r) return i === 0 ? 'next' : 'ahead';
       if (r.status === 'lost' && r.lostAt === i) return 'lost';
@@ -777,14 +833,14 @@
         <div class="sec-h"><h2>Today's lineup</h2><p>One trainer per type, in battle order.</p></div>
         <ol class="e4-list">${LINEUP.map((m, i) => `<li class="e4-row ${stageOf(i)}">
           <span class="e4-n">${i + 1}</span>
-          <span class="e4-g">${glyph(m.ace, 52)}</span>
+          <span class="e4-g">${S.art === 'drawn' ? glyph(m.ace, 52) : oppArt(E4.asOpp(m), 52)}</span>
           <span class="e4-b"><b>${m.titleGen}</b><span class="e4-meta">${typeChip(m.type)} Ace ${esc(m.ace.replace('-Midnight', ' (Midnight)').replace('-Alola', ' (Alolan)'))} · ${m.from}</span></span>
           <span class="e4-s">${stLabel[stageOf(i)]}</span>
           <button class="btn tiny" data-view="${i}">Team</button></li>`).join('')}</ol>
       </section>
       <section>
-        <div class="sec-h"><h2>Your team</h2><p>${!r ? 'One Gen 9 Random Battle team for all four fights. Tap a Pokémon to lead; you can change your lead before each fight.' : pickable ? `Fully healed before every fight. Tap a Pokémon to lead against ${LINEUP[r.stage].name}.` : 'Locked in for today. Fully healed before every fight.'}</p></div>
-        <div class="grid" id="team">${team.map((s, i) => monCard(s, i, {lead: i === lead, static: !pickable})).join('')}</div>
+        <div class="sec-h"><h2>Your team</h2><p>${!r ? 'One Gen 9 Random Battle team for all four fights. Tap a Pokémon to lead; you can change your lead before each fight.' : over ? 'Tap a Pokémon to lead your practice run.' : pickable ? `Fully healed before every fight. Tap a Pokémon to lead against ${LINEUP[r.stage].name}.` : 'Locked in for today. Fully healed before every fight.'}</p></div>
+        <div class="grid" id="team">${team.map((s, i) => monCard(s, i, {lead: i === shownLead, static: !pickable && !over})).join('')}</div>
       </section>
       <section class="rules">
         <h2>Rules</h2>
@@ -796,7 +852,11 @@
         </ul>
       </section>`;
     $('#btn-back').onclick = () => { Music.blip(500); goHome(); };
-    if (pickable) $('#lobby').querySelectorAll('#team .mon').forEach((b) => b.onclick = () => { if (r) { r.lead = +b.dataset.i; save(); } else leads.e4 = +b.dataset.i; Music.blip(660); renderE4(); });
+    if (pickable || over) $('#lobby').querySelectorAll('#team .mon').forEach((b) => b.onclick = () => {
+      const i = +b.dataset.i;
+      if (over) pleads.e4 = i; else if (r) { r.lead = i; save(); } else leads.e4 = i;
+      Music.blip(660); renderE4();
+    });
     $('#lobby').querySelectorAll('[data-view]').forEach((b) => b.onclick = () => { setOpp(E4.asOpp(LINEUP[+b.dataset.view])); openFoeTeam(false); });
     const s1 = $('#e4-start'); if (s1) s1.onclick = () => {
       let run = e4Run();
@@ -804,14 +864,14 @@
       startE4Fight(run, 'daily');
     };
     const r1 = $('#e4-result'); if (r1) r1.onclick = () => e4Summary(r, 'daily');
-    const p1 = $('#e4-practice'); if (p1) p1.onclick = () => startE4Practice(r);
+    const p1 = $('#e4-practice'); if (p1) p1.onclick = () => startE4Practice(r, shownLead);
     tick();
   }
-  function startE4Practice(r) {
+  function startE4Practice(r, lead) {
     const stage = r && r.status === 'lost' ? r.lostAt : 0;
-    chooseLead(teamFor(E4_OPP), r ? r.lead : leads.e4, 'Practice · Elite Four', `Battle ${stage + 1} vs ${LINEUP[stage].name}`, (lead) => {
-      startE4Fight({lead, stage, status: 'live', fights: [], practice: true}, 'practice');
-    });
+    const go = (lead) => { pleads.e4 = lead; startE4Fight({lead, stage, status: 'live', fights: [], practice: true}, 'practice'); };
+    if (lead != null) go(lead);
+    else chooseLead(teamFor(E4_OPP), pleads.e4 ?? (r ? r.lead : leads.e4), 'Practice · Elite Four', `Battle ${stage + 1} vs ${LINEUP[stage].name}`, go);
   }
   function startE4Fight(run, mode) {
     Music.unlock();
@@ -860,7 +920,7 @@
       <p class="eyebrow">${mode === 'daily' ? 'Elite Four' : 'Practice'} · Battle ${run.stage} of 4 cleared</p>
       <h2 id="e4i-h">${beaten.name} defeated</h2>
       <p>Your team has been fully healed. Next up: <b>${nxt.titleGen}</b>, ${nxt.type} type.</p>
-      <div class="e4-next">${glyph(nxt.ace, 56)}<div><b>${nxt.titleGen}</b><div>${typeChip(nxt.type)} Ace ${esc(nxt.ace)}</div></div></div>
+      <div class="e4-next">${S.art === 'drawn' ? glyph(nxt.ace, 56) : oppArt(E4.asOpp(nxt), 64)}<div><b>${nxt.titleGen}</b><div>${typeChip(nxt.type)} Ace ${esc(nxt.ace)}</div></div></div>
       ${leadPickHTML(teamFor(E4_OPP), run.lead)}
       <div class="cta-row"><button class="btn gold" id="e4-go">Battle ${nxt.name}</button><button class="btn ghost" id="e4-back">Back to lineup</button></div>
     </div>`;
@@ -882,7 +942,7 @@
       <h2 id="e4s-h">${run.status === 'won' ? 'Elite Four cleared' : `${LINEUP[run.lostAt].name} stopped you`}</h2>
       <p>${run.status === 'won' ? 'You beat all four with one team.' : `You fell in battle ${run.lostAt + 1} of 4.`}</p>
       <ol class="e4-list compact">${LINEUP.map((m, i) => { const f = run.fights[i]; const s = f && f.result ? (f.result === 'win' ? 'beat' : 'lost') : 'ahead';
-        return `<li class="e4-row ${s}"><span class="e4-n">${i + 1}</span><span class="e4-g">${glyph(m.ace, 36)}</span><span class="e4-b"><b>${m.titleGen}</b><span class="e4-meta">${typeChip(m.type)}${f && f.turns ? ` ${f.turns} turns` : ''}</span></span><span class="e4-s">${s === 'beat' ? 'Defeated' : s === 'lost' ? 'Beat you' : ''}</span></li>`; }).join('')}</ol>
+        return `<li class="e4-row ${s}"><span class="e4-n">${i + 1}</span><span class="e4-g">${glyph(m.ace, 36)}</span><span class="e4-b"><b>${m.titleGen}</b><span class="e4-meta">${typeChip(m.type)}${f && f.result ? ` Led with ${esc(teamFor(E4_OPP)[f.lead ?? run.lead].species)}` : ''}${f && f.turns ? ` · ${f.turns} turn${f.turns === 1 ? "" : "s"}` : ''}</span></span><span class="e4-s">${s === 'beat' ? 'Defeated' : s === 'lost' ? 'Beat you' : ''}</span></li>`; }).join('')}</ol>
       ${txt ? `<pre class="share" id="share-t">${esc(txt)}</pre>` : ''}
       <div class="cta-row">
         ${txt ? '<button class="btn gold" id="btn-copy">Copy result</button>' : ''}
@@ -913,6 +973,7 @@
       <h3>Display</h3>
       <div class="set-row"><label for="player">Player</label><select id="player"><option value="male">Male</option><option value="female" ${S.player === 'female' ? 'selected' : ''}>Female</option></select></div>
       <div class="set-trainers" id="set-trainers"></div>
+      <div class="set-row"><label for="art">Art</label><select id="art"><option value="sprites">Official sprites (linked from Pokémon Showdown)</option><option value="drawn" ${S.art === 'drawn' ? 'selected' : ''}>Original drawn art</option></select></div>
       <div class="set-row"><label for="style">Battle style</label><select id="style">${Object.entries(STYLES).map(([k, v]) => `<option value="${k}" ${S.style === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
       <h3>Sound</h3>
       <div class="set-row"><label for="mute">Mute everything</label><input type="checkbox" id="mute" ${S.music.muted ? 'checked' : ''}></div>
@@ -937,7 +998,8 @@
     const drawTrainers = () => { $('#set-trainers').innerHTML = [C.OPP.cynthia, C.OPP.zinnia, {id: 'e4'}].map((o) => `<figure>${protagArt(o, 'front', 64)}<figcaption>${protagFor(o)}</figcaption></figure>`).join(''); };
     drawTrainers();
     $('#player').onchange = (e) => { S.player = e.target.value; save(); drawTrainers(); if (G) $('#bt-mode').textContent = $('#bt-mode').textContent.replace(/\S+ vs /, protagFor(OPP) + ' vs '); };
-    $('#style').onchange = (e) => { S.style = e.target.value; save(); if (G) $('.device').dataset.skin = skinFor(OPP); };
+    $('#style').onchange = (e) => { S.style = e.target.value; save(); if (G) { $('.device').dataset.skin = skinFor(OPP); renderActives(true); } };
+    $('#art').onchange = (e) => { S.art = e.target.value; save(); if (G) renderActives(true); };
     M.querySelectorAll('select[data-k]').forEach((sel) => sel.onchange = () => { S.music.slots[sel.dataset.k] = sel.value; save(); if (currentMusicSlot() === sel.dataset.k) resume(); });
     M.querySelectorAll('[data-preview]').forEach((b) => b.onclick = () => { Music.unlock(); Music.preview(S.music.slots[b.dataset.preview]); });
     M.querySelectorAll('.lib input[type=text]').forEach((inp) => inp.onchange = () => { const t = S.lib.find((x) => x.id === inp.dataset.id); if (t) { t.name = inp.value.trim() || t.name; save(); openSettings(); } });

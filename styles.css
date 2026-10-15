@@ -463,3 +463,22 @@ body[data-opp="e4"] .mon.is-lead { border-color: var(--e4); }
 .lead-pick button { display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border: 1px solid var(--line); border-radius: 10px; background: var(--night); font-size: 10px; min-width: 0; color: inherit; cursor: pointer; }
 .lead-pick button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lead-pick button[aria-checked="true"] { border-color: var(--gold); background: var(--panel); }
+
+/* ---------- linked sprites ---------- */
+img.spr { object-fit: contain; }
+img.spr.thumb { image-rendering: pixelated; }
+.battler { display: flex; justify-content: center; align-items: flex-end; }
+.battler.p2 { top: auto; bottom: 56%; }
+.battler img.spr { max-width: none; flex: none; }
+
+/* ---------- linked trainer sprites ---------- */
+img.trsp { image-rendering: pixelated; object-fit: contain; }
+.battler img.trsp { width: 31cqw; height: auto; max-width: none; flex: none; }
+.battler.p2.leave { animation-name: leaveR; }
+@keyframes leaveR { to { transform: translateX(120%); opacity: 0; } }
+.style-note img.trsp { width: 30px; height: 30px; margin-block: -8px; }
+.hero { position: relative; }
+.hero-tr { position: absolute; right: 0; top: 0; pointer-events: none; }
+.hero-tr img.trsp { width: clamp(84px, 22vw, 150px); height: auto; }
+.e4-g img.trsp { width: 100%; height: auto; }
+.hero:has(> .hero-tr > img) > :is(.eyebrow, .opp-h) { padding-right: clamp(84px, 22vw, 150px); }

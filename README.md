@@ -99,7 +99,8 @@ node tools/ko-check.js                 # does the AI take obvious last-Pokémon 
 - Battle engine: [@pkmn/sim](https://github.com/pkmn/ps), from the [Pokémon Showdown](https://github.com/smogon/pokemon-showdown) simulator (MIT).
 - Random Battle sets: @pkmn/randoms (MIT).
 - Font: Pixelify Sans (SIL Open Font License), loaded from Google Fonts.
-- Pokémon art, backgrounds and trainers: original, drawn in code.
+- Pokémon and trainer sprites: linked at runtime from Pokémon Showdown's sprite server, not stored in this repo (© Nintendo, Creatures, GAME FREAK). Settings can switch to the original drawn art in `src/art.js`, which is also the fallback when a sprite fails to load.
+- Backgrounds and trainers: original, drawn in code.
 - Music and sound: original chiptunes generated in the browser.
 
 See [THIRD_PARTY.md](THIRD_PARTY.md).

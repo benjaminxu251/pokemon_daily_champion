@@ -109,7 +109,8 @@ Each trainer keeps their original type theme and their signature ace.
 - The player picks their lead before each fight: in the lobby before the first, and on the interstitial (or the lobby) before the rest. Each fight stores its own lead, which locks once that fight's first turn is played.
 - Lose once, and the day's run is over. The record stores who stopped the player and at which battle.
 - After a loss, the player can continue in practice from the fight they lost. After a clear, they can do a practice run. Practice is never recorded.
-- Practice in every mode uses today's team and opens with a lead picker. Each practice battle gets a fresh random seed. Practice is never recorded.
+- Practice in every mode uses today's team with a fresh random seed. Once today's battle is over, the lobby's team grid picks the practice lead and the practice button starts straight away. Starting practice from a result screen opens a lead picker instead. Practice is never recorded.
+- Result screens show which Pokémon the player led with; the Elite Four summary shows the lead for each fight.
 
 **Records**
 - Runs cleared, runs failed, win streak and best streak.
@@ -195,7 +196,8 @@ Poppy · Olivia · Lacey · Lucian
 - Keyboard: keys 1–4 pick moves, Esc closes panels.
 
 **Pokémon visuals**
-- Each Pokémon is drawn with original art generated in code (`src/art.js`). Its egg groups pick a body plan (four-legged, upright, bird, fish, serpent and so on), its Pokédex color and types set the palette, its types add features (flames, wings, fins, crystals, horns), and its height sets the size. A table of overrides fixes species whose egg groups give the wrong shape. Mega forms get a colored halo and a spiked back. Other forms are drawn distinct from their base: a form that adds a type shifts its color toward that type, regional forms get a region pattern (Alolan flower, Galarian stripes, Hisuian rune marks, Paldean band), and the rest get an emblem. The player's Pokémon is drawn mirrored without a face, as a back view. No official sprites are used. `tools/art.html` shows a gallery of every species.
+- By default, Pokémon are shown with official sprites linked at runtime from Pokémon Showdown's sprite server; nothing is stored in the repo. Each battle style uses its era's set (Gen 3 → `gen3`, Gen 4 → `gen4`, Gen 6 and Gen 9 → animated `ani`), falling back to newer sets and finally to the drawn art. Back sprites are used for the player's side, and thumbnails use `gen5`. Settings → Pokémon art switches to the drawn art.
+- The drawn art is original, generated in code (`src/art.js`). Its egg groups pick a body plan (four-legged, upright, bird, fish, serpent and so on), its Pokédex color and types set the palette, its types add features (flames, wings, fins, crystals, horns), and its height sets the size. A table of overrides fixes species whose egg groups give the wrong shape. Mega forms get a colored halo and a spiked back. Other forms are drawn distinct from their base: a form that adds a type shifts its color toward that type, regional forms get a region pattern (Alolan flower, Galarian stripes, Hisuian rune marks, Paldean band), and the rest get an emblem. The player's Pokémon is drawn mirrored without a face, as a back view. No official sprites are used. `tools/art.html` shows a gallery of every species.
 
 **Battle style**
 - Players pick the battle screen's look in Settings before entering a battle. Each lobby shows the current style next to the start button, and tapping it opens Settings.
@@ -209,7 +211,8 @@ Poppy · Olivia · Lacey · Lucian
 
 **Backgrounds and trainers** (`src/scenes.js`, original, drawn in code)
 - The background is the opponent's location, whatever the style: a champion's chamber for Cynthia, the Sky Pillar summit for Zinnia, and a league stadium for the Elite Four with the court in the member's type color.
-- The player's trainer (Lucas/Dawn, Brendan/May, Florian/Juliana, by the Player setting) appears from behind during the battle intro, then steps away as the lead Pokémon is sent out. The lobby's style button and Settings show the trainer from the front.
+- The battle intro shows the player's trainer (Lucas/Dawn, Brendan/May, Florian/Juliana, by the Player setting) and the opponent on their platforms, then both step away as the leads are sent out. The lobby shows the opponent, the style button shows the player, and the Elite Four lineup shows each member.
+- With Settings → Art on official sprites (the default), trainers are Showdown trainer sprites linked at runtime: `lucas-gen4pt`/`dawn-gen4pt`, `brendan`/`may` (ORAS), `florian-s`/`juliana-s`, and each opponent's battle-style era variant where one exists (`cynthia-gen4`, `agatha-gen3`...). With drawn art, the player uses the original drawn trainers and opponents are not drawn.
 
 **Responsive**
 - Phones (portrait): the screens stack. The device is sized to fit the viewport height.
@@ -260,7 +263,7 @@ Poppy · Olivia · Lacey · Lucian
 
 ## 10. Constraints and decisions
 
-- **No official assets in the shipped build.** Official sprites, music and trainer art belong to Nintendo, Creatures and GAME FREAK. Daily Red Game uses sprites from the PokeAPI repository, but those carry no license for the art itself. Champion Daily uses original generated art, original music and a user-supplied audio library instead.
+- **No official assets in the repo.** Official sprites, music and trainer art belong to Nintendo, Creatures and GAME FREAK. The repo contains only original art, music and code. Official sprites are linked from Pokémon Showdown at runtime, a choice the project owner made accepting the takedown risk. The drawn art stays as the fallback and as a setting.
 - **Fixed champion teams:** Cynthia and Zinnia use their real in-game teams every day. This is faithful, but the teams are public and the same every day, so players can plan counters. The Elite Four's daily variety offsets this.
 - **One difficulty:** Easy and Hard were removed. Player teams use Showdown's balance levels rather than a flat Lv100, so each day's team is about equally strong.
 
