@@ -15,6 +15,10 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+## Pokémon Showdown Battle Factory sets
+
+`vendor/factory-sets.js` is `data/random-battles/gen9/factory-sets.json` from https://github.com/smogon/pokemon-showdown (MIT, same license and copyright as above), wrapped as a script. Refresh it with `tools/update-factory-sets.sh`.
+
 ## Pixelify Sans and Barlow Semi Condensed
 
 Loaded from Google Fonts. Licensed under the SIL Open Font License 1.1.

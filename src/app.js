@@ -25,7 +25,7 @@
   const skinFor = (o) => STYLE_SKIN[S.style] || o.skin;
   const SKIN_LABEL = {gen3: 'Gen 3', dppt: 'Gen 4', oras: 'Gen 6', sv: 'Gen 9'};
   // Player character: the protagonist of the opponent's game, by chosen gender.
-  const PROTAG = {cynthia: {male: 'Lucas', female: 'Dawn'}, zinnia: {male: 'Brendan', female: 'May'}, e4: {male: 'Florian', female: 'Juliana'}};
+  const PROTAG = {cynthia: {male: 'Lucas', female: 'Dawn'}, zinnia: {male: 'Brendan', female: 'May'}, e4: {male: 'Florian', female: 'Juliana'}, factory: {male: 'Brendan', female: 'May'}};
   const protagFor = (o) => (PROTAG[o.member || o.id === 'e4' ? 'e4' : o.id] || PROTAG.cynthia)[S.player === 'female' ? 'female' : 'male'];
   // Trainer sprites are linked from Showdown like the Pokémon sprites; protagonists fall back to the drawn trainers.
   const PROTAG_SPR = {lucas: 'lucas-gen4pt', dawn: 'dawn-gen4pt', brendan: 'brendan', may: 'may', florian: 'florian-s', juliana: 'juliana-s'};
@@ -42,11 +42,13 @@
   };
   const protagArt = (o, view, size) => {
     const k = protagFor(o).toLowerCase();
-    return S.art === 'drawn' ? window.Scenes.trainer(k, view, size) : trSprite([PROTAG_SPR[k]], size, k);
+    // The Battle Factory is Emerald's, so its Brendan and May wear their Emerald outfits.
+    return S.art === 'drawn' ? window.Scenes.trainer(k, view, size) : trSprite(o.id === 'factory' ? [k + '-e', PROTAG_SPR[k]] : [PROTAG_SPR[k]], size, k);
   };
   // Opponent trainer: the battle style's era variant first, then the plain and older sprites.
   const oppArt = (o, size) => {
     if (S.art === 'drawn') return '';
+    if (o.sprite) return trSprite([o.sprite, o.sprite.replace(/-gen3$/, '')], size);
     const id = o.member ? o.member.id : o.id;
     return trSprite([id + TR_SUFFIX[skinFor(o)], id, id + '-gen3', id + '-gen1'], size);
   };
@@ -121,7 +123,10 @@
     e4g7: ['Battle! Elite Four · Sun & Moon', 'Dv7AXRqjTuQ'],
     e4g9: ['Battle! Elite Four · Scarlet & Violet', 'Bjz2R7sDALw'],
     e4bb: ['Battle! Blueberry League Elite Four · The Indigo Disk', 'jYGGNoV6TvY'],
+    rsetrainer: ['Battle! Trainer · Ruby, Sapphire & Emerald', 'Cp-waxoLel8'],
+    frontierbrain: ['Battle! Frontier Brain · Emerald', 'U730ft9yESk'],
     lilycove: ['Lilycove City · Ruby, Sapphire & Emerald', 'y0vVeMsCMWI'],
+    factory: ['Battle Factory · Emerald', 'rzqvegiZpWw'],
   };
   // Showdown's own battle music, hotlinked like the sprites.
   const SD_THEMES = {'hgss-kanto-trainer': 'Trainer (Kanto) · HeartGold & SoulSilver', 'hgss-johto-trainer': 'Trainer (Johto) · HeartGold & SoulSilver',
@@ -132,6 +137,7 @@
   const SD_AUDIO = 'https://play.pokemonshowdown.com/audio/';
   // Each opponent's own theme; E4 members use their debut generation's Elite Four music.
   function defaultBattle(o) {
+    if (o.factory) return o.factory.head ? 'y:frontierbrain' : 'y:rsetrainer';
     if (o.member) return o.member.from === 'The Indigo Disk' ? 'y:e4bb' : 'y:e4g' + (YT_THEMES['e4g' + o.member.gen] ? o.member.gen : 9);
     return o.id === 'zinnia' ? 'y:zinnia' : 'y:cynthia';
   }
@@ -148,6 +154,8 @@
   function sourceFor(slot) {
     if (slot === 'victory' || slot === 'defeat') return 'b:' + slot;
     if (slot === 'battle') return (G && G.music) || (S.music.battle !== 'default' ? S.music.battle : defaultBattle(OPP));
+    // The Factory lobby plays the Battle Factory theme unless the player picked their own menu track.
+    if (document.body.dataset.opp === 'factory' && (S.music.menu || 'y:lilycove') === 'y:lilycove') return 'y:factory';
     return S.music.menu || 'y:lilycove';
   }
 
@@ -339,7 +347,7 @@
     $('#battle').hidden = view !== 'battle';
     $('#about').hidden = view !== 'about';
     document.body.dataset.view = view;
-    document.body.dataset.opp = view === 'home' ? '' : (OPP.member || OPP.id === 'e4' ? 'e4' : OPP.id);
+    document.body.dataset.opp = view === 'home' || view === 'about' ? '' : (OPP.member || OPP.id === 'e4' ? 'e4' : OPP.id);
     window.scrollTo(0, 0);
   }
 
@@ -364,9 +372,9 @@
           <div class="chips">${chips}</div>
           <button class="btn gold" data-go="${o.id}">Battle ${o.name}</button>
         </article>`;
-      }).join('')}${e4Card()}</div>
+      }).join('')}${e4Card()}${factoryCard()}</div>
       <p class="foot-note">New teams in <b class="countdown">--:--:--</b></p>`;
-    $('#home').querySelectorAll('[data-go]').forEach((b) => b.onclick = () => { Music.blip(); if (b.dataset.go === 'e4') openE4(); else openLobby(C.OPP[b.dataset.go]); });
+    $('#home').querySelectorAll('[data-go]').forEach((b) => b.onclick = () => { Music.blip(); if (b.dataset.go === 'e4') openE4(); else if (b.dataset.go === 'factory') openFactory(); else openLobby(C.OPP[b.dataset.go]); });
     tick();
   }
   function goHome() { G = null; show('home'); renderHome(); Music.play('menu'); }
@@ -377,7 +385,7 @@
     return `<button class="mon${opts.lead ? ' is-lead' : ''}" data-i="${i}" ${opts.static ? 'disabled' : ''} aria-pressed="${!!opts.lead}">
       <div class="mon-g">${glyph(set.species, 64)}</div>
       <div class="mon-b">
-        <div class="mon-top"><span class="mon-name">${esc(sp.name)}</span><span class="mon-lv">Lv${opts.level || set.level || 100}</span>${opts.lead ? '<span class="lead-tag">LEAD</span>' : ''}${opts.ace ? '<span class="lead-tag ace">ACE</span>' : ''}</div>
+        <div class="mon-top"><span class="mon-name">${esc(sp.name)}</span><span class="mon-lv">Lv${opts.level || set.level || 100}</span>${opts.lead ? `<span class="lead-tag">${opts.tag || 'LEAD'}</span>` : ''}${opts.ace ? '<span class="lead-tag ace">ACE</span>' : ''}</div>
         <div class="mon-types">${sp.types.map(typeChip).join('')}</div>
         <div class="mon-meta">${esc(itemName(D.toID(set.item)))} · ${esc(abilName(D.toID(set.ability)))}${set.nature ? ' · ' + set.nature : ''}</div>
         <ul class="mon-moves">${set.moves.map((m) => { const mv = D.moves.get(m); return `<li style="--tc:${TYPE_COLOR[mv.type]}">${esc(mv.name)}</li>`; }).join('')}</ul>
@@ -502,7 +510,8 @@
     const bg = $('#scene .bg'); if (bg) bg.remove();
     $('#scene').insertAdjacentHTML('afterbegin', window.Scenes.background(OPP, OPP.member && TYPE_COLOR[OPP.member.type]));
     $('#btn-foe').textContent = `${OPP.name}'s team`;
-    $('#bt-mode').textContent = `${G.mode === 'daily' ? 'Day ' + C.dayNumber(today) : 'Practice'} · ${G.kind === 'e4' ? `Elite Four ${G.e4.stage + 1}/4 · ` : ''}${protagFor(OPP)} vs ${OPP.name}`;
+    $('#bt-mode').textContent = G.kind === 'factory' ? `Battle Factory ${G.factory.tier} · Battle ${G.factory.n + 1} · ${protagFor(OPP)} vs ${OPP.name}`
+      : `${G.mode === 'daily' ? 'Day ' + C.dayNumber(today) : 'Practice'} · ${G.kind === 'e4' ? `Elite Four ${G.e4.stage + 1}/4 · ` : ''}${protagFor(OPP)} vs ${OPP.name}`;
     for (const s of ['p1', 'p2']) { $(`#box-${s}`).hidden = true; $(`#mon-${s}`).innerHTML = ''; }
     G.busy = true;
     const evs = C.toEvents(G.b.log, OPP);
@@ -515,7 +524,7 @@
     } else {
       Music.play('battle', true);
       $('#touch').innerHTML = '';
-      const accent = OPP.member ? TYPE_COLOR[OPP.member.type] : {cynthia: '#c9a24e', zinnia: '#3fb8b0'}[OPP.id];
+      const accent = OPP.member ? TYPE_COLOR[OPP.member.type] : {cynthia: '#c9a24e', zinnia: '#3fb8b0', factory: '#58b878'}[OPP.id];
       await window.Intro.play($('#scene'), {skin: skinFor(OPP), opp: oppArt(OPP, 160) || '<div class="in-sil"></div>', player: protagArt(OPP, 'front', 160),
         name: OPP.name, role: OPP.title.replace(OPP.name, '').trim(), playerName: protagFor(OPP), accent});
       const intro = [$('#mon-p1'), $('#mon-p2')];
@@ -598,7 +607,6 @@
       const mons = G.b[side].pokemon.slice().sort((a, b) => a.position - b.position);
       const state = (p) => p.fainted ? 'out' : p.status ? 'st' : 'ok';
       const balls = mons.map((p) => `<i class="ball ${state(p)}" data-tip="${side}:${G.b[side].pokemon.indexOf(p)}" title="${esc(p.species.name)}${p.fainted ? ' (fainted)' : ''}">${BALL}</i>`);
-      while (balls.length < 6) balls.push(`<i class="ball none">${BALL}</i>`);
       $(`#balls-${side}`).innerHTML = balls.join('');
     }
   }
@@ -740,7 +748,7 @@
       <div class="t-row">
         <button class="t-small t-bag" disabled title="No items in this challenge"><span>Bag</span><small>None</small></button>
         <button class="t-small t-run" id="t-run"><span>Run</span><small>Forfeit</small></button>
-        <button class="t-small t-mon" id="t-mon"><span>Pokémon</span><small>${G.b.p1.pokemon.filter((p) => !p.fainted).length}/6</small></button>
+        <button class="t-small t-mon" id="t-mon"><span>Pokémon</span><small>${G.b.p1.pokemon.filter((p) => !p.fainted).length}/${G.b.p1.pokemon.length}</small></button>
       </div></div>`;
     $('#t-fight').onclick = () => { Music.blip(); renderFight(); };
     $('#t-mon').onclick = () => { Music.blip(); renderParty(false); };
@@ -798,7 +806,7 @@
     $('#t-yes').onclick = () => { G.b.lose('p1'); G.run.log.push(['lose', '']); persist(); finish(); };
     $('#t-back').onclick = () => renderMain();
   }
-  function persist() { if (G.mode === 'daily') save(); }
+  function persist() { if (G.mode === 'daily' || G.mode === 'factory') save(); }
 
   // ---------- opponent brain (worker keeps the page smooth) ----------
   const Brain = (() => {
@@ -856,6 +864,7 @@
 
   function finish() {
     if (G.kind === 'e4') return e4Finish();
+    if (G.kind === 'factory') return factoryFinish();
     const b = G.b;
     const won = b.winner === 'You';
     const hpList = (side) => b[side].pokemon.slice().sort((x, y) => x.position - y.position).map((p) => [p.species.name, p.fainted ? 0 : Math.max(1, Math.round(100 * p.hp / p.maxhp))]);
@@ -1149,6 +1158,143 @@
     };
     $('#e4-cont').onclick = () => { M.hidden = true; startE4Practice(run.practice ? Object.assign({}, run, {lostAt: run.lostAt}) : run); };
     $('#e4-lobby').onclick = () => { M.hidden = true; G = null; openE4(); };
+  }
+
+  // ---------------- Battle Factory ----------------
+  // Endless runs, no daily seed: pick a tier, rent 3 of 6, battle 3v3, swap after each win. One run at a time, saved as it goes.
+  const FACTORY_OPP = {id: 'factory', name: 'Battle Factory', title: 'Battle Factory', gen: 9, skin: 'gen3', place: 'Battle Factory', mechanics: 'Gen IX'};
+  const fstat = (tier) => (S.stats['factory:' + tier] = Object.assign({best: 0, runs: 0, wins: 0}, S.stats['factory:' + tier]));
+  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  let fsel = {picks: [], give: null, take: null}; // unsaved UI selections
+  function factoryCard() {
+    const r = S.factory;
+    const live = r && r.status !== 'over';
+    const best = Math.max(0, ...Factory.TIERS.map((t) => fstat(t).best));
+    return `<article class="opp-card" data-o="factory">
+      <div class="opp-top"><span class="gen-badge">Gen IX</span><span class="opp-place">Battle Frontier</span></div>
+      <h2>Battle Factory</h2>
+      <p class="opp-desc">Rent 3 of 6 Pokémon from Showdown's Battle Factory sets, battle 3v3, and swap after every win. Pick a tier and see how long your streak lasts. Emerald style, no daily limit.</p>
+      <div class="chips"><span class="chip ${live ? 'live' : 'open'}">${live ? `<b>${r.tier} run · streak ${r.n}</b>` : 'Best streak <b>' + best + '</b>'}</span></div>
+      <button class="btn gold" data-go="factory">${live ? 'Continue run' : 'Enter the Factory'}</button>
+    </article>`;
+  }
+  function openFactory() { setOpp(FACTORY_OPP); show('lobby'); renderFactory(); Music.play('menu', true); }
+  function factoryNext(run) {
+    run.opp = Factory.opponent(run.tier, run.id, run.n, run.team);
+    run.status = 'pre'; run.fight = null; run.lead = Math.min(run.lead || 0, run.team.length - 1);
+    fsel = {picks: [], give: null, take: null};
+    save();
+  }
+  function renderFactory() {
+    setOpp(FACTORY_OPP);
+    const r = S.factory, st = r ? r.status : 'none';
+    const tiers = Factory.TIERS;
+    const pickTier = S.factoryTier && tiers.includes(S.factoryTier) ? S.factoryTier : 'OU';
+    const battleNo = r ? r.n + 1 : 1;
+    const round = Math.floor((battleNo - 1) / Factory.ROUND) + 1, inRound = (battleNo - 1) % Factory.ROUND + 1;
+    let main = '';
+    if (st === 'none' || st === 'over') {
+      main = `${st === 'over' ? `<section class="fac-over"><h2>Run over</h2><p>${esc(r.lostTo)} ended your ${r.tier} run. Streak: <b>${r.n}</b>${r.n >= fstat(r.tier).best && r.n > 0 ? ' (a new best)' : ''}.</p></section>` : ''}
+        <section><div class="sec-h"><h2>Choose a tier</h2><p>Both you and your opponents draw from this tier's Battle Factory sets.</p></div>
+          <div class="tier-pick" role="radiogroup">${tiers.map((t) => `<button role="radio" aria-checked="${t === pickTier}" data-tier="${t}"><b>${t}</b><small>Best ${fstat(t).best}</small></button>`).join('')}</div>
+          <div class="cta-row"><button class="btn gold" id="fac-start">Start a ${pickTier} run</button>${styleNote(FACTORY_OPP)}</div></section>`;
+    } else if (st === 'draft') {
+      main = `<section><div class="sec-h"><h2>Rent 3 Pokémon</h2><p>Pick 3 of these 6 rentals. The order you pick sets your starting lead.</p></div>
+        <div class="grid" id="fac-rent">${r.rentals.map((s, i) => { const k = fsel.picks.indexOf(i); return monCard(s, i, {lead: k >= 0, tag: k >= 0 ? '#' + (k + 1) : ''}); }).join('')}</div>
+        <div class="cta-row"><button class="btn gold" id="fac-rent-go" ${fsel.picks.length === 3 ? '' : 'disabled'}>Rent these 3</button><span class="status-line">${fsel.picks.length}/3 chosen</span></div></section>`;
+    } else if (st === 'pre' || st === 'live') {
+      const o = r.opp, h = Factory.hint(o.sets, D);
+      main = `<section class="fac-next"><div class="fac-foe">${oppArt(Factory.asOpp(o), 96)}<div>
+          <p class="eyebrow">Round ${round} · Battle ${inRound} of ${Factory.ROUND}${o.head ? ' · Factory Head' : ''}</p>
+          <h2>${esc(o.trainer.title)}</h2>
+          <p class="fac-hint">Most common type: ${typeChip(h.type)}<br>Battle style: ${esc(h.style)}</p></div></div>
+          <div class="cta-row"><button class="btn gold" id="fac-go">${st === 'live' ? 'Resume battle' : 'Battle!'}</button><button class="btn ghost" id="fac-quit">Give up run</button>${styleNote(Factory.asOpp(o))}</div></section>
+        <section><div class="sec-h"><h2>Your team</h2><p>${st === 'live' ? 'Battle in progress.' : 'Fully healed. Tap a Pokémon to lead.'}</p></div>
+          <div class="grid" id="team">${r.team.map((s, i) => monCard(s, i, {lead: i === (st === 'live' ? r.fight.lead : r.lead), static: st === 'live'})).join('')}</div></section>`;
+    } else if (st === 'swap') {
+      const theirs = r.prev.sets;
+      main = `<section><div class="sec-h"><h2>Swap a Pokémon?</h2><p>You beat ${esc(r.prev.trainer.title)}. Trade one of yours for one of theirs, or keep your team.</p></div>
+        <h3 class="fac-sub">Give one of yours</h3>
+        <div class="grid" id="fac-give">${r.team.map((s, i) => monCard(s, i, {lead: fsel.give === i, tag: 'GIVE'})).join('')}</div>
+        <h3 class="fac-sub">Take one of theirs</h3>
+        <div class="grid" id="fac-take">${theirs.map((s, i) => monCard(s, i, {lead: fsel.take === i, tag: 'TAKE'})).join('')}</div>
+        <div class="cta-row"><button class="btn gold" id="fac-swap" ${fsel.give != null && fsel.take != null ? '' : 'disabled'}>Swap</button><button class="btn" id="fac-keep">Keep my team</button></div></section>`;
+    }
+    $('#lobby').innerHTML = `
+      <button class="back" id="btn-back">← All opponents</button>
+      <section class="hero">
+        <p class="eyebrow">Battle Frontier · Gen 9 battle rules · Lv100${r && st !== 'over' ? ' · ' + r.tier + ' tier' : ''}</p>
+        <h1 class="opp-h">Battle <em>Factory</em></h1>
+        ${r && st !== 'none' && st !== 'over' ? `<dl class="stats"><div><dt>Tier</dt><dd>${r.tier}</dd></div><div><dt>Streak</dt><dd>${r.n}</dd></div><div><dt>Best (${r.tier})</dt><dd>${fstat(r.tier).best}</dd></div><div><dt>Next</dt><dd>Battle ${battleNo}</dd></div></dl>` : ''}
+      </section>
+      ${main}
+      <section class="rules">
+        <h2>Rules</h2>
+        <ul>
+          <li>Gen 9 battle rules with no Terastallization, Mega Evolution or Z-Moves. Everyone is Lv100.</li>
+          <li>Sets are Pokémon Showdown's Gen 9 Battle Factory sets for the tier you pick. Opponents draw from the same tier.</li>
+          <li>Rent 3 of 6 and battle 3v3. Before each battle you get a hint: the opponent's most common type and battle style.</li>
+          <li>After every win your team is fully healed and you can swap one of your Pokémon for one of the beaten team's.</li>
+          <li>Rounds are ${Factory.ROUND} battles. Factory Head Noland waits at battles ${Factory.HEAD_AT.join(' and ')}. One loss ends the run; your best streak is kept per tier.</li>
+        </ul>
+      </section>`;
+    $('#btn-back').onclick = () => { Music.blip(500); goHome(); };
+    $('#lobby').querySelectorAll('[data-tier]').forEach((b) => b.onclick = () => { S.factoryTier = b.dataset.tier; save(); Music.blip(660); renderFactory(); });
+    const start = $('#fac-start');
+    if (start) start.onclick = () => {
+      const id = newId();
+      S.factory = {id, tier: pickTier, rentals: Factory.rentals(pickTier, id), team: [], n: 0, lead: 0, status: 'draft'};
+      fsel = {picks: [], give: null, take: null}; save(); Music.blip(); renderFactory();
+    };
+    $('#lobby').querySelectorAll('#fac-rent .mon').forEach((b) => b.onclick = () => {
+      const i = +b.dataset.i, k = fsel.picks.indexOf(i);
+      if (k >= 0) fsel.picks.splice(k, 1); else if (fsel.picks.length < 3) fsel.picks.push(i);
+      Music.blip(660); renderFactory();
+    });
+    const rent = $('#fac-rent-go');
+    if (rent) rent.onclick = () => { r.team = fsel.picks.map((i) => r.rentals[i]); r.lead = 0; delete r.rentals; Music.blip(); factoryNext(r); renderFactory(); };
+    if (st === 'pre') $('#lobby').querySelectorAll('#team .mon').forEach((b) => b.onclick = () => { r.lead = +b.dataset.i; save(); Music.blip(660); renderFactory(); });
+    const go = $('#fac-go'); if (go) go.onclick = () => startFactoryFight();
+    const quit = $('#fac-quit');
+    if (quit) quit.onclick = () => { if (!confirm('Give up this run? Your streak of ' + r.n + ' is kept as your record if it is a best.')) return; factoryEnd(r, 'You gave up'); renderFactory(); };
+    $('#lobby').querySelectorAll('#fac-give .mon').forEach((b) => b.onclick = () => { fsel.give = +b.dataset.i; Music.blip(660); renderFactory(); });
+    $('#lobby').querySelectorAll('#fac-take .mon').forEach((b) => b.onclick = () => { fsel.take = +b.dataset.i; Music.blip(660); renderFactory(); });
+    const swap = $('#fac-swap');
+    if (swap) swap.onclick = () => { r.team[fsel.give] = Object.assign({}, r.prev.sets[fsel.take]); delete r.prev; Music.blip(); factoryNext(r); renderFactory(); };
+    const keep = $('#fac-keep'); if (keep) keep.onclick = () => { delete r.prev; Music.blip(); factoryNext(r); renderFactory(); };
+  }
+  function factoryEnd(run, lostTo) {
+    const st = fstat(run.tier);
+    st.runs++; st.best = Math.max(st.best, run.n);
+    Object.assign(run, {status: 'over', lostTo, fight: null});
+    save();
+  }
+  function startFactoryFight() {
+    Music.unlock();
+    const run = S.factory;
+    if (!run.fight) run.fight = {seed: newId(), log: [], lead: run.lead};
+    run.status = 'live'; save();
+    const opp = Factory.asOpp(run.opp);
+    setOpp(opp);
+    const b = C.newBattle(run.fight.seed, run.team, run.fight.lead, 100, opp, run.opp.sets);
+    C.replay(b, run.fight.log);
+    G = {b, mode: 'factory', kind: 'factory', run: run.fight, factory: run, foe: run.opp.sets, disp: {p1: {}, p2: {}}, logPos: 0, turn: 0, mega: false};
+    enterBattle(run.fight.log.length > 0);
+  }
+  function factoryFinish() {
+    const b = G.b, run = G.factory, won = b.winner === 'You';
+    Music.play(won ? 'victory' : 'defeat', true);
+    if (run.status === 'live') {
+      if (won) {
+        run.n++; const st = fstat(run.tier); st.wins++; st.best = Math.max(st.best, run.n);
+        run.prev = run.opp; run.status = 'swap'; run.fight = null; save();
+      } else factoryEnd(run, run.opp.trainer.title);
+    }
+    say(won ? `You defeated ${OPP.title}!` : 'You are out of usable Pokémon!');
+    $('#touch').innerHTML = `<button class="t-fight" id="t-res"><span>${won ? 'Victory' : 'Defeat'}</span><small>${won ? `Streak ${run.n}` : 'Run over'}</small></button>`;
+    const next = () => { if (G && G.b === b) { G = null; openFactory(); } };
+    $('#t-res').onclick = next;
+    setTimeout(() => { if (document.body.dataset.view === 'battle') next(); }, 2200);
   }
 
   // ---------------- settings ----------------

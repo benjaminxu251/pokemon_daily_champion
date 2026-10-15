@@ -566,7 +566,6 @@ img.trsp { image-rendering: pixelated; object-fit: contain; }
 .ball .b-btn { fill: #fff; stroke: #1a1a1a; stroke-width: 1.4; } .ball .b-rim { fill: none; stroke: #1a1a1a; stroke-width: 1.4; }
 .ball.st .b-top { fill: #f0a020; }
 .ball.out .b-top, .ball.out .b-low, .ball.out .b-btn { fill: #6a6a74; } .ball.out { opacity: .55; }
-.ball.none .b-top, .ball.none .b-low, .ball.none .b-btn { fill: transparent; } .ball.none .b-band { stroke: transparent; } .ball.none { opacity: .35; }
 
 /* ---------- HUD effect chips ---------- */
 .bx-chips { display: flex; flex-wrap: wrap; gap: 2px 3px; margin-top: 2px; }
@@ -586,3 +585,23 @@ img.trsp { image-rendering: pixelated; object-fit: contain; }
 #music-dock .md-info small { color: var(--muted); font-family: var(--display); letter-spacing: .08em; text-transform: uppercase; font-size: 10px; }
 #music-dock .md-info .btn { justify-self: start; }
 @media (min-width: 1120px) { #music-dock { position: fixed; right: 16px; bottom: 16px; margin: 0; z-index: 15; flex-direction: column; align-items: stretch; width: 216px; } }
+
+/* ---------- Battle Factory ---------- */
+:root { --factory: #58b878; }
+.opp-card[data-o="factory"] { background: linear-gradient(160deg, #173a2c, #1c2238 60%); }
+.opp-card[data-o="factory"] .gen-badge, body[data-opp="factory"] .btn.gold, .opp-card[data-o="factory"] .btn.gold { background: var(--factory); border-color: var(--factory); color: #082414; box-shadow: 0 3px 0 #2f7a4c; }
+body[data-opp="factory"] h1 em, body[data-opp="factory"] .eyebrow { color: var(--factory); }
+body[data-opp="factory"] .mon.is-lead { border-color: var(--factory); box-shadow: inset 0 0 0 1px var(--factory); }
+.tier-pick { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin: 8px 0 12px; }
+.tier-pick button { display: grid; gap: 2px; justify-items: center; padding: 10px 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--night); color: inherit; cursor: pointer; }
+.tier-pick button b { font-family: var(--display); font-size: 18px; }
+.tier-pick button small { color: var(--muted); font-size: 11px; }
+.tier-pick button[aria-checked="true"] { border-color: var(--factory); background: var(--panel); box-shadow: inset 0 0 0 1px var(--factory); }
+@media (max-width: 480px) { .tier-pick { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.fac-next .fac-foe { display: flex; gap: 14px; align-items: center; }
+.fac-next .fac-foe img.trsp { width: 96px; height: 96px; }
+.fac-next h2 { margin: 2px 0 6px; }
+.fac-hint { margin: 0; color: var(--muted); line-height: 1.7; }
+.fac-sub { margin: 14px 0 6px; font-size: 14px; color: var(--muted); }
+.fac-over { border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; margin-bottom: 8px; }
+.fac-over h2 { margin: 0 0 4px; }

@@ -77,9 +77,24 @@
           plat(P2, 0, '#b5a9d8', accent, 'pa') + plat(P1, 0, '#b5a9d8', accent, 'pb'),
       };
     },
+    // Battle Factory: a rental warehouse. Green walls, conveyor belts of Poké Balls, steel floor.
+    factory() {
+      const balls = (y, off) => Array.from({length: 9}, (_, i) => { const x = off + i * 30; return `<circle cx="${x}" cy="${y}" r="4.5" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/><path d="M${x - 4.5},${y} A4.5,4.5 0 0 1 ${x + 4.5},${y} Z" fill="#e3352b" stroke="#1a1a1a" stroke-width="1"/>`; }).join('');
+      return {
+        defs: grad('wall', [[0, '#2f6a52'], [1, '#4f9a72']]) + grad('flr', [[0, '#9aa6a8'], [1, '#5f6a70']]) + grad('belt', [[0, '#3a3f48'], [1, '#22262c']]) +
+          rgrad('pa', [[0, '#d8e8d8'], [.7, '#a8c0b0'], [1, '#809888']]) + rgrad('pb', [[0, '#d8e8d8'], [.7, '#a8c0b0'], [1, '#809888']]),
+        body: `<rect width="256" height="66" fill="url(#wall)"/>` +
+          Array.from({length: 9}, (_, i) => `<rect x="${i * 32}" y="0" width="3" height="66" fill="#245040" opacity=".6"/>`).join('') +
+          `<rect y="10" width="256" height="12" fill="url(#belt)"/>` + balls(16, 8) + `<rect y="30" width="256" height="12" fill="url(#belt)"/>` + balls(36, 23) +
+          `<rect x="96" y="44" width="64" height="20" rx="3" fill="#20303a"/><rect x="100" y="48" width="56" height="10" fill="#58f0a8" opacity=".8"/>` +
+          `<rect y="62" width="256" height="4" fill="#f0c040"/>` +
+          `<rect y="66" width="256" height="126" fill="url(#flr)"/>` + rays(128, 20, 66, 192, 12, '#2a3036', .35) + rows(66, 192, 7, '#2a3036', .35) +
+          plat(P2, 0, '#5a6e62', '#f0c040', 'pa') + plat(P1, 0, '#5a6e62', '#f0c040', 'pb'),
+      };
+    },
   };
 
-  const LOC = {cynthia: 'champion', zinnia: 'sky'};
+  const LOC = {cynthia: 'champion', zinnia: 'sky', factory: 'factory'};
   // opp: an opponent from Core.OPP or an Elite Four member's opponent. typeColor: the member's type color.
   function background(opp, typeColor) {
     const s = SCENES[LOC[opp.id] || (opp.member ? 'arena' : 'champion')](typeColor || '#e8742f');

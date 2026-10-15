@@ -395,5 +395,5 @@
     return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(2026, 9, 14)) / 864e5) + 1;
   }
 
-  window.Core = {OPP_LEVEL, withLevels, generator, statOf, OPP, dexFor, oppTeam, aiChoice, estDamage, dex, CYNTHIA, playerTeam, newBattle, act, replay, needs, toEvents, dateKey, dayNumber, effMult};
+  window.Core = {OPP_LEVEL, withLevels, generator, hashSeed, statOf, OPP, dexFor, oppTeam, aiChoice, estDamage, dex, CYNTHIA, playerTeam, newBattle, act, replay, needs, toEvents, dateKey, dayNumber, effMult};
 })();

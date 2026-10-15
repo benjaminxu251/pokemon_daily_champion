@@ -6,7 +6,9 @@ A daily Pokémon battle challenge in the browser. Every day, everyone gets the s
 - **Lorekeeper Zinnia** in her Sky Pillar team under Gen 6 rules, with Mega Evolution
 - **The Elite Four** under Gen 9 rules: four type specialists drawn daily from every region, fought back to back
 
-You get one recorded attempt per mode each day, then practice as much as you like. Opponents are played by a search AI that simulates every option in the real battle engine.
+Plus the **Battle Factory**, which has no daily limit: pick a tier, rent 3 of 6 Pokémon from Showdown's Gen 9 Battle Factory sets, battle 3v3 and swap after every win to build a streak.
+
+You get one recorded attempt per daily mode each day, then practice as much as you like. Opponents are played by a search AI that simulates every option in the real battle engine.
 
 Inspired by [Daily Red Game](https://dailyredgame.org/) and [amoi-builds' original Daily Red](https://github.com/amoi-builds/dailyred).
 
@@ -38,12 +40,14 @@ styles.css          all styles (one section per battle skin)
 src/
   core.js           teams, champions, battle setup, battle text
   e4.js             Elite Four pool, daily lineup, team generator
+  factory.js        Battle Factory rentals, opponents, hints
   art.js            original Pokémon art, generated per species
   scenes.js         battle backgrounds and player trainers
   ai.js             opponent search AI
   ai-worker.js      runs the AI off the main thread
   app.js            UI: menus, lobbies, battle screen, settings, audio
 vendor/sim.js       Pokémon Showdown engine bundle (prebuilt)
+vendor/factory-sets.js  Showdown's Gen 9 Battle Factory sets (tools/update-factory-sets.sh)
 build/              rebuilds vendor/sim.js
 tools/              headless AI benchmarks; art.html is a gallery of every Pokémon's art
 docs/PRD.md         product requirements: what the game is and why
@@ -98,6 +102,7 @@ node tools/ko-check.js                 # does the AI take obvious last-Pokémon 
 
 - Battle engine: [@pkmn/sim](https://github.com/pkmn/ps), from the [Pokémon Showdown](https://github.com/smogon/pokemon-showdown) simulator (MIT).
 - Random Battle sets: @pkmn/randoms (MIT).
+- Battle Factory sets: Pokémon Showdown's `data/random-battles/gen9/factory-sets.json` (MIT).
 - Font: Pixelify Sans (SIL Open Font License), loaded from Google Fonts.
 - Pokémon and trainer sprites: linked at runtime from Pokémon Showdown's sprite server, not stored in this repo (© Nintendo, Creatures, GAME FREAK). Settings can switch to the original drawn art in `src/art.js`, which is also the fallback when a sprite fails to load.
 - Backgrounds and trainers: original, drawn in code.
