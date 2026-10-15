@@ -482,3 +482,4 @@ img.trsp { image-rendering: pixelated; object-fit: contain; }
 .hero-tr img.trsp { width: clamp(84px, 22vw, 150px); height: auto; }
 .e4-g img.trsp { width: 100%; height: auto; }
 .hero:has(> .hero-tr > img) > :is(.eyebrow, .opp-h) { padding-right: clamp(84px, 22vw, 150px); }
+.e4-next #e4-view { margin-left: auto; }

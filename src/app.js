@@ -726,7 +726,7 @@
 
   // ---------------- opponent team viewer ----------------
   const STAT_LABEL = {hp: 'HP', atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe'};
-  function openFoeTeam(inBattle) {
+  function openFoeTeam(inBattle, onClose) {
     const live = inBattle && G && G.b;
     const sets = live ? G.foe : foeFor(OPP);
     const src = live ? G.b : C.newBattle(today, teamFor(OPP), 0, null, OPP, sets);
@@ -736,7 +736,7 @@
     const M = $('#modal');
     M.innerHTML = `<div class="sheet foe" role="dialog" aria-modal="true" aria-labelledby="foe-h">
       <div class="foe-head"><div><p class="eyebrow">${OPP.mechanics} · ${LV}${live ? ` · ${left} of ${mons.length} left` : ''}</p><h2 id="foe-h">${OPP.name}'s team</h2></div>
-      <button class="btn tiny ghost" id="foe-close">Close</button></div>
+      <button class="btn tiny ghost" id="foe-close">${onClose ? '← Back' : 'Close'}</button></div>
       <div class="foe-tabs" role="tablist">${mons.map((p, i) => `<button role="tab" id="foe-tab-${i}" aria-selected="${i === 0}" data-i="${i}" class="${p.fainted ? 'out' : ''}">
         ${glyph(p.species.name, 34)}<span>${esc(p.species.name.replace('-Mega', ''))}</span>${p === active ? '<i class="dot" title="In battle"></i>' : ''}</button>`).join('')}</div>
       <div id="foe-body"></div>
@@ -771,7 +771,7 @@
       M.querySelectorAll('.foe-tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.i == i));
     };
     M.querySelectorAll('.foe-tabs button').forEach((b) => b.onclick = () => { Music.blip(); showMon(+b.dataset.i); });
-    $('#foe-close').onclick = () => { M.hidden = true; };
+    $('#foe-close').onclick = () => { if (onClose) onClose(); else M.hidden = true; };
     showMon(active ? Math.max(0, mons.indexOf(active)) : 0);
   }
   $('#btn-foe').onclick = () => openFoeTeam(true);
@@ -911,8 +911,8 @@
     $('#t-res').onclick = next;
     setTimeout(() => { if (document.body.dataset.view === 'battle' && G && G.b === b) next(); }, 1800);
   }
-  function e4After(won) {
-    const run = G.e4, mode = G.mode, beaten = OPP;
+  function e4After(won, beaten = OPP) {
+    const run = G.e4, mode = G.mode;
     if (run.status !== 'live') return e4Summary(run, mode);
     const nxt = LINEUP[run.stage];
     const M = $('#modal');
@@ -920,13 +920,14 @@
       <p class="eyebrow">${mode === 'daily' ? 'Elite Four' : 'Practice'} · Battle ${run.stage} of 4 cleared</p>
       <h2 id="e4i-h">${beaten.name} defeated</h2>
       <p>Your team has been fully healed. Next up: <b>${nxt.titleGen}</b>, ${nxt.type} type.</p>
-      <div class="e4-next">${S.art === 'drawn' ? glyph(nxt.ace, 56) : oppArt(E4.asOpp(nxt), 64)}<div><b>${nxt.titleGen}</b><div>${typeChip(nxt.type)} Ace ${esc(nxt.ace)}</div></div></div>
+      <div class="e4-next">${S.art === 'drawn' ? glyph(nxt.ace, 56) : oppArt(E4.asOpp(nxt), 64)}<div><b>${nxt.titleGen}</b><div>${typeChip(nxt.type)} Ace ${esc(nxt.ace)}</div></div><button class="btn tiny" id="e4-view">View team</button></div>
       ${leadPickHTML(teamFor(E4_OPP), run.lead)}
       <div class="cta-row"><button class="btn gold" id="e4-go">Battle ${nxt.name}</button><button class="btn ghost" id="e4-back">Back to lineup</button></div>
     </div>`;
     M.hidden = false;
     bindLeadPick(M, (i) => { run.lead = i; if (mode === 'daily') save(); });
     $('#e4-go').onclick = () => { M.hidden = true; startE4Fight(run, mode); };
+    $('#e4-view').onclick = () => { Music.blip(); setOpp(E4.asOpp(nxt)); openFoeTeam(false, () => e4After(won, beaten)); };
     $('#e4-back').onclick = () => { M.hidden = true; G = null; openE4(); };
   }
   function e4Share(run) {

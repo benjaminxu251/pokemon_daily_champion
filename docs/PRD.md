@@ -106,6 +106,7 @@ Each trainer keeps their original type theme and their signature ace.
 **Run structure**
 - Four separate battles in order.
 - Win, and the next trainer is shown with a "your team has been fully healed" interstitial.
+- The interstitial has a View team button that opens the next member's full team sheet; Back returns to the interstitial with the lead choice kept.
 - The player picks their lead before each fight: in the lobby before the first, and on the interstitial (or the lobby) before the rest. Each fight stores its own lead, which locks once that fight's first turn is played.
 - Lose once, and the day's run is over. The record stores who stopped the player and at which battle.
 - After a loss, the player can continue in practice from the fight they lost. After a clear, they can do a practice run. Practice is never recorded.
