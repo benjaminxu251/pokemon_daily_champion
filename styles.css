@@ -610,3 +610,29 @@ body[data-opp="factory"] .mon.is-lead { border-color: var(--factory); box-shadow
 .battler.enter, .battler.hit .glyph, .battler.p1.lunge, .battler.p2.lunge, .battler.leave, .battler.intro-in { animation-duration: calc(var(--anim, .45s) * var(--spd, 1)); }
 .battler.hit .glyph { --anim: .5s; } .battler.lunge { --anim: .3s; } .battler.leave { --anim: .35s; } .battler.intro-in { --anim: .55s; }
 .battler { transition-duration: calc(.4s * var(--spd, 1)); }
+
+/* ---------- battlefield status (hazards, screens, weather, terrain, rooms) ---------- */
+#field { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+#field svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#field .fx-float { animation: fx-float 2.4s ease-in-out infinite; transform-box: fill-box; }
+@keyframes fx-float { 50% { transform: translateY(-2px); } }
+#field .fx-wind { animation: fx-wind 1.2s linear infinite; }
+@keyframes fx-wind { from { stroke-dasharray: 0 200; } 60% { stroke-dasharray: 120 200; } to { stroke-dasharray: 120 200; stroke-dashoffset: -120; opacity: 0; } }
+#field::before, #field::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+#field.w-raindance::before { background: repeating-linear-gradient(105deg, transparent 0 9px, rgba(170,200,255,.45) 9px 10px); background-size: 40px 40px; animation: fx-rain .35s linear infinite; }
+#field.w-raindance::after { background: rgba(40,60,110,.18); }
+@keyframes fx-rain { to { background-position: -8px 40px; } }
+#field.w-sunnyday::after { background: radial-gradient(70% 60% at 85% 0%, rgba(255,220,120,.45), transparent 70%), rgba(255,170,60,.08); }
+#field.w-sandstorm::before { background: repeating-linear-gradient(170deg, transparent 0 6px, rgba(210,170,100,.35) 6px 7px); background-size: 60px 60px; animation: fx-sand .5s linear infinite; }
+#field.w-sandstorm::after { background: rgba(190,150,80,.2); }
+@keyframes fx-sand { to { background-position: 60px 10px; } }
+#field:is(.w-snow, .w-hail)::before { background-image: radial-gradient(circle, rgba(255,255,255,.9) 0 1.2px, transparent 1.6px), radial-gradient(circle, rgba(255,255,255,.7) 0 1px, transparent 1.4px); background-size: 34px 34px, 22px 22px; background-position: 0 0, 11px 7px; animation: fx-snow 2.2s linear infinite; }
+#field:is(.w-snow, .w-hail)::after { background: rgba(200,230,255,.14); }
+@keyframes fx-snow { to { background-position: 10px 34px, 20px 29px; } }
+#field.trickroom { box-shadow: inset 0 0 0 4px rgba(240,112,192,.55), inset 0 0 0 8px rgba(120,220,240,.3); }
+#field-tags { position: absolute; z-index: 3; right: 2%; top: 2%; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; pointer-events: none; }
+#field-tags .ft { font-family: var(--body); font-weight: 700; font-size: clamp(9px, 2.8cqw, 13px); color: #fff; background: rgba(16,16,28,.72); border-radius: 99px; padding: 1px 7px; white-space: nowrap; }
+#field-tags .ft b { color: #ffd84a; margin-left: 2px; }
+.ft-trickroom { box-shadow: inset 0 0 0 1px #f070c0; } .ft-electricterrain { box-shadow: inset 0 0 0 1px #f8d030; } .ft-grassyterrain { box-shadow: inset 0 0 0 1px #58c858; }
+.ft-psychicterrain { box-shadow: inset 0 0 0 1px #f070c0; } .ft-mistyterrain { box-shadow: inset 0 0 0 1px #f8b8e0; }
+@media (prefers-reduced-motion: reduce) { #field *, #field::before, #field::after { animation: none !important; } }

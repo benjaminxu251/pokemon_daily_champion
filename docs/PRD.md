@@ -226,6 +226,12 @@ Poppy · Olivia · Lacey · Lucian
 - The battle intro shows the player's trainer (Lucas/Dawn, Brendan/May, Florian/Juliana, by the Player setting) and the opponent on their platforms, then both step away as the leads are sent out. The lobby shows the opponent, the style button shows the player, and the Elite Four lineup shows each member.
 - With Settings → Art on official sprites (the default), trainers are Showdown trainer sprites linked at runtime: `lucas-gen4pt`/`dawn-gen4pt`, `brendan`/`may` (ORAS), `florian-s`/`juliana-s`, and each opponent's battle-style era variant where one exists (`cynthia-gen4`, `agatha-gen3`...). With drawn art, the player uses the original drawn trainers and opponents are not drawn.
 
+**Battlefield status** (read from the engine when a turn's text finishes)
+- Hazards are drawn on each side's platform: floating Stealth Rocks, one cluster of Spikes or Toxic Spikes per layer, and Sticky Web.
+- Reflect, Light Screen and Aurora Veil show as a tinted barrier in front of the protected side; Tailwind as wind streaks.
+- Weather overlays (rain, harsh sunlight, sandstorm, snow and hail), a floor tint for each terrain, and a border for Trick Room.
+- Labels at the top right list weather, terrain, Trick Room, Gravity, Magic Room and Wonder Room with turns left; the HUD chips list screens and Tailwind with turns left (e.g. "Reflect · 5").
+
 **Encounter intros** (`src/intro.js`, one per battle style; tap to skip, off with reduced motion)
 - Gen 3: black bars sweep in, then an Emerald-style League strip slides in with both trainers and the opponent's title.
 - Gen 4: the DPPt League mugshot: a band slides in with the opponent and their title on black.

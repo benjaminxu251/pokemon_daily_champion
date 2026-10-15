@@ -514,6 +514,7 @@
     $('#bt-mode').textContent = G.kind === 'factory' ? `Battle Factory ${G.factory.tier} · Battle ${G.factory.n + 1} · ${protagFor(OPP)} vs ${OPP.name}`
       : `${G.mode === 'daily' ? 'Day ' + C.dayNumber(today) : 'Practice'} · ${G.kind === 'e4' ? `Elite Four ${G.e4.stage + 1}/4 · ` : ''}${protagFor(OPP)} vs ${OPP.name}`;
     for (const s of ['p1', 'p2']) { $(`#box-${s}`).hidden = true; $(`#mon-${s}`).innerHTML = ''; }
+    G.snap = null; renderField();
     G.busy = true;
     const evs = C.toEvents(G.b.log, OPP);
     G.logPos = G.b.log.length;
@@ -623,18 +624,58 @@
     attract: 'Attracted', destinybond: 'Destiny Bond', magnetrise: 'Magnet Rise', healblock: 'Heal Block', embargo: 'Embargo', disable: 'Disabled',
     partiallytrapped: 'Trapped', trapped: 'Trapped', mustrecharge: 'Recharging', lockedmove: 'Locked in', choicelock: 'Choice locked', stockpile: 'Stockpile',
     charge: 'Charged', flashfire: 'Flash Fire', slowstart: 'Slow Start', smackdown: 'Grounded', saltcure: 'Salt Cure', protosynthesis: 'Protosynthesis', quarkdrive: 'Quark Drive'};
+  const HAZARD = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb']);
   const SIDE = {stealthrock: 'Stealth Rock', spikes: 'Spikes', toxicspikes: 'Toxic Spikes', stickyweb: 'Sticky Web', reflect: 'Reflect', lightscreen: 'Light Screen',
     auroraveil: 'Aurora Veil', tailwind: 'Tailwind', safeguard: 'Safeguard', mist: 'Mist', luckychant: 'Lucky Chant'};
   function snapshot() {
     G.snap = {};
+    const sides = {};
     for (const side of ['p1', 'p2']) {
       const a = G.b[side].active[0];
       const sc = G.b[side].sideConditions;
-      const sideCh = Object.keys(sc).filter((k) => SIDE[k]).map((k) => SIDE[k] + (sc[k].layers > 1 ? ' ×' + sc[k].layers : ''));
+      // Hazards are drawn on the field, so the HUD lists only timed side effects (screens, Tailwind...).
+      const sideCh = Object.keys(sc).filter((k) => SIDE[k] && !HAZARD.has(k)).map((k) => SIDE[k] + (sc[k].layers > 1 ? ' ×' + sc[k].layers : '') + (sc[k].duration ? ' · ' + sc[k].duration : ''));
+      sides[side] = Object.fromEntries(Object.entries(sc).map(([k, v]) => [k, {layers: v.layers || 1, turns: v.duration || 0}]));
       G.snap[side] = a && !a.fainted ? {name: a.name, boosts: Object.assign({}, a.boosts), vol: Object.keys(a.volatiles).filter((k) => VOLATILE[k])
         .map((k) => VOLATILE[k] + (k === 'perishsong' ? ' ' + a.volatiles[k].duration : k === 'stockpile' ? ' ' + a.volatiles[k].layers : '')), sideCh} : {name: null, boosts: {}, vol: [], sideCh};
     }
-    renderChips();
+    const f = G.b.field;
+    G.snap.field = {weather: f.weather ? {id: f.weather, turns: f.weatherState.duration || 0} : null, terrain: f.terrain ? {id: f.terrain, turns: f.terrainState.duration || 0} : null,
+      pseudo: Object.entries(f.pseudoWeather).map(([id, v]) => ({id, turns: v.duration || 0})), side: sides};
+    renderChips(); renderField();
+  }
+  // Battlefield visuals: hazards on each platform, screens and Tailwind by each side, weather, terrain and room effects,
+  // with labels for field effects and their turns left. Drawn on the scene's 256x192 grid, like the background.
+  const FIELD_NAME = {raindance: 'Rain', primordialsea: 'Heavy Rain', sunnyday: 'Harsh Sunlight', desolateland: 'Extremely Harsh Sunlight', sandstorm: 'Sandstorm',
+    hail: 'Hail', snow: 'Snow', snowscape: 'Snow', deltastream: 'Strong Winds', electricterrain: 'Electric Terrain', grassyterrain: 'Grassy Terrain',
+    psychicterrain: 'Psychic Terrain', mistyterrain: 'Misty Terrain', trickroom: 'Trick Room', gravity: 'Gravity', magicroom: 'Magic Room', wonderroom: 'Wonder Room'};
+  const TERRAIN_COLOR = {electricterrain: '#f8d030', grassyterrain: '#58c858', psychicterrain: '#f070c0', mistyterrain: '#f8b8e0'};
+  const PLAT = {p2: {x: 184, y: 80, rx: 57, ry: 12.5}, p1: {x: 62, y: 126, rx: 72, ry: 14.5}};
+  function renderField() {
+    const el = $('#field'), tags = $('#field-tags'), F = G && G.snap && G.snap.field;
+    if (!el) return;
+    if (!F) { el.innerHTML = ''; el.className = ''; tags.innerHTML = ''; return; }
+    let svg = '';
+    if (F.terrain) svg += `<rect x="0" y="66" width="256" height="126" fill="${TERRAIN_COLOR[F.terrain.id] || '#fff'}" opacity=".22"/>`;
+    for (const s of ['p1', 'p2']) {
+      const P = PLAT[s], sc = F.side[s] || {};
+      const around = (n, k, fn) => Array.from({length: n}, (_, i) => { const a = Math.PI * (0.15 + 0.7 * (i + k * 0.37) / n); return fn(P.x + Math.cos(Math.PI + a) * P.rx * .8, P.y + Math.sin(a) * P.ry * .7, i); }).join('');
+      if (sc.stickyweb) svg += `<g stroke="#f4f4f4" stroke-width=".8" fill="none" opacity=".75">${[.35, .6, .85].map((k) => `<ellipse cx="${P.x}" cy="${P.y}" rx="${P.rx * k}" ry="${P.ry * k}"/>`).join('')}${Array.from({length: 8}, (_, i) => { const a = i * Math.PI / 4; return `<line x1="${P.x}" y1="${P.y}" x2="${(P.x + Math.cos(a) * P.rx * .9).toFixed(1)}" y2="${(P.y + Math.sin(a) * P.ry * .9).toFixed(1)}"/>`; }).join('')}</g>`;
+      for (let L = 0; L < (sc.spikes ? sc.spikes.layers : 0); L++) svg += around(3, L, (x, y) => `<path d="M${(x - 3).toFixed(1)},${(y + 2).toFixed(1)} l3,-6 l3,6 z" fill="#3a3a48" stroke="#c8c8d8" stroke-width=".6"/>`);
+      for (let L = 0; L < (sc.toxicspikes ? sc.toxicspikes.layers : 0); L++) svg += around(3, L + 0.5, (x, y) => `<path d="M${(x - 3).toFixed(1)},${(y + 2).toFixed(1)} l3,-6 l3,6 z" fill="#9a46a8" stroke="#e0a8f0" stroke-width=".6"/>`);
+      if (sc.stealthrock) svg += Array.from({length: 4}, (_, i) => { const x = P.x - P.rx * .8 + i * P.rx * .5, y = P.y - P.ry * 1.1 - (i % 2) * 5;
+        return `<path d="M${x},${y} l4,-6 l5,2 l2,6 l-5,4 l-6,-1 z" fill="#a08868" stroke="#4a3a28" stroke-width=".8" class="fx-float" style="animation-delay:${-i * .4}s"/>`; }).join('');
+      // screens stand in front of the side's Pokémon; the far side's is smaller
+      const scr = [['reflect', '#f890b8'], ['lightscreen', '#f8e070'], ['auroraveil', '#88e0f8']].filter(([k]) => sc[k]);
+      scr.forEach(([, c], i) => { const w = s === 'p2' ? 58 : 76, h = s === 'p2' ? 62 : 80, x = P.x - w / 2 + i * 5, y = P.y - h + 4 - i * 4;
+        svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${c}" fill-opacity=".14" stroke="${c}" stroke-opacity=".75" stroke-width="1.2"/>`; });
+      if (sc.tailwind) svg += [0, 1, 2].map((i) => { const y = P.y - 30 - i * 12; return `<path d="M${P.x - P.rx},${y} q${P.rx * .6},-8 ${P.rx * 1.4},0 t${P.rx * .5},-3" stroke="#e8f8ff" stroke-width="1.4" fill="none" opacity=".7" class="fx-wind" style="animation-delay:${-i * .3}s"/>`; }).join('');
+    }
+    el.innerHTML = `<svg viewBox="0 0 256 192" preserveAspectRatio="none">${svg}</svg>`;
+    const w = F.weather && F.weather.id;
+    el.className = [w ? 'w-' + ({primordialsea: 'raindance', desolateland: 'sunnyday', snowscape: 'snow'}[w] || w) : '', F.pseudo.some((p) => p.id === 'trickroom') ? 'trickroom' : ''].join(' ').trim();
+    const tag = (x) => `<span class="ft ft-${x.id}">${FIELD_NAME[x.id] || x.id}${x.turns ? ` <b>${x.turns}</b>` : ''}</span>`;
+    tags.innerHTML = [F.weather, F.terrain, ...F.pseudo].filter((x) => x && FIELD_NAME[x.id]).map(tag).join('');
   }
   function renderChips() {
     for (const side of ['p1', 'p2']) {
