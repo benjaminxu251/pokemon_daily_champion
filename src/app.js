@@ -239,7 +239,7 @@
           <div class="opp-top"><span class="gen-badge">${o.mechanics}</span><span class="opp-place">${o.place}</span></div>
           <h2>${o.title}</h2>
           <div class="opp-mons">${foeFor(o).map((m) => glyph(m.species, 38)).join('')}</div>
-          <p class="opp-desc">${o.gen === 4 ? 'Diamond, Pearl and Platinum rules. Physical/special split, no Fairy type.' : 'Omega Ruby and Alpha Sapphire rules. Fairy type, Mega Evolution and the Gen 6 type chart.'}</p>
+          <p class="opp-desc">${o.gen === 4 ? 'Diamond, Pearl and Platinum battle rules. Physical/special split, no Fairy type.' : 'Omega Ruby and Alpha Sapphire battle rules. Fairy type, Mega Evolution and the Gen 6 type chart.'}</p>
           <div class="chips">${chips}</div>
           <button class="btn gold" data-go="${o.id}">Battle ${o.name}</button>
         </article>`;
@@ -275,7 +275,7 @@
     $('#lobby').innerHTML = `
       <button class="back" id="btn-back">← All opponents</button>
       <section class="hero">
-        <p class="eyebrow">Day ${C.dayNumber(today)} · ${o.mechanics} rules · ${o.place} · Lv100</p>
+        <p class="eyebrow">Day ${C.dayNumber(today)} · Gen ${o.gen} battle rules · ${o.place} · Lv100</p>
         <h1 class="opp-h">${o.title.replace(o.name, `<em>${o.name}</em>`)}</h1>
         <div class="cta-row">
           ${run && run.result
@@ -300,7 +300,7 @@
       <section class="rules">
         <h2>Rules</h2>
         <ul>
-          <li>${o.gen === 4 ? 'Gen 4 mechanics from Pokémon Showdown\'s battle engine: the physical/special split, Gen 4 items, abilities and type chart.' : 'Gen 6 mechanics from Pokémon Showdown\'s battle engine: Fairy type, the updated Steel type, Mega Evolution, Gen 6 abilities and items.'}</li>
+          <li>${o.gen === 4 ? 'Gen 4 battle rules from Pokémon Showdown\'s battle engine: the physical/special split, Gen 4 items, abilities and type chart.' : 'Gen 6 battle rules from Pokémon Showdown\'s battle engine: Fairy type, the updated Steel type, Mega Evolution, Gen 6 abilities and items.'}</li>
           ${o.gen === 6 ? '<li>If your Pokémon holds its Mega Stone, a Mega Evolution button appears in the Fight menu. One Mega per battle.</li>' : ''}
           <li>${o.name} plays to win: every turn she simulates her options against yours in the real engine and picks the strongest. She knows your sets, as you can see hers.</li>
           <li>Your team: today's Gen ${o.gen} Random Battle sets, all at Lv100. No bag items.</li>
