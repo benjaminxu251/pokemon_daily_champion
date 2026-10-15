@@ -213,6 +213,7 @@ Poppy · Olivia · Lacey · Lucian
 ## 8. Audio and settings
 
 **Settings modal**
+- Player (Display section): Male or Female. You play as the protagonist of the opponent's game: Lucas/Dawn against Cynthia, Brendan/May against Zinnia and Florian/Juliana in the Elite Four. For now this changes only the name in the battle intro, the battle header and the lobby. Character art is on the roadmap.
 - Battle style (Display section): Default, Gen 3, Gen 4 or Gen 6. See below.
 - Mute everything.
 - Music volume.

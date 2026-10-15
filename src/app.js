@@ -19,7 +19,10 @@
   const STYLE_SKIN = {gen3: 'gen3', gen4: 'dppt', gen6: 'oras'};
   const skinFor = (o) => STYLE_SKIN[S.style] || o.skin;
   const SKIN_LABEL = {gen3: 'Gen 3', dppt: 'Gen 4', oras: 'Gen 6', sv: 'Gen 9'};
-  const styleNote = (o) => '<button class="btn tiny ghost style-note" data-style-open>Battle style: ' + SKIN_LABEL[skinFor(o)] + (S.style === 'default' ? ' (default)' : '') + '</button>';
+  // Player character: the protagonist of the opponent's game, by chosen gender.
+  const PROTAG = {cynthia: {male: 'Lucas', female: 'Dawn'}, zinnia: {male: 'Brendan', female: 'May'}, e4: {male: 'Florian', female: 'Juliana'}};
+  const protagFor = (o) => (PROTAG[o.member || o.id === 'e4' ? 'e4' : o.id] || PROTAG.cynthia)[S.player === 'female' ? 'female' : 'male'];
+  const styleNote = (o) => '<button class="btn tiny ghost style-note" data-style-open>Battle style: ' + SKIN_LABEL[skinFor(o)] + (S.style === 'default' ? ' (default)' : '') + ' · Playing as ' + protagFor(o) + '</button>';
   S.music.slots = Object.assign({}, DEFAULT_SLOTS, S.music.slots);
   if (!readKey(KEY)) { // carry over records from the first version
     const old = readKey('champdaily:v1');
@@ -346,7 +349,7 @@
     show('battle');
     $('.device').dataset.skin = skinFor(OPP);
     $('#btn-foe').textContent = `${OPP.name}'s team`;
-    $('#bt-mode').textContent = `${G.mode === 'daily' ? 'Day ' + C.dayNumber(today) : 'Practice'} · ${G.kind === 'e4' ? `Elite Four ${G.e4.stage + 1}/4 · ` : ''}${OPP.name}`;
+    $('#bt-mode').textContent = `${G.mode === 'daily' ? 'Day ' + C.dayNumber(today) : 'Practice'} · ${G.kind === 'e4' ? `Elite Four ${G.e4.stage + 1}/4 · ` : ''}${protagFor(OPP)} vs ${OPP.name}`;
     for (const s of ['p1', 'p2']) { $(`#box-${s}`).hidden = true; $(`#mon-${s}`).innerHTML = ''; }
     G.busy = true;
     const evs = C.toEvents(G.b.log, OPP);
@@ -359,7 +362,7 @@
     } else {
       Music.play(battleSlot(OPP), true);
       $('#touch').innerHTML = '';
-      await typeText(`You are challenged by ${OPP.title}!`);
+      await typeText(`${protagFor(OPP)} is challenged by ${OPP.title}!`);
       await wait(400);
       await runEvents(evs);
     }
@@ -881,6 +884,7 @@
     M.innerHTML = `<div class="sheet settings" role="dialog" aria-modal="true" aria-labelledby="set-h">
       <div class="foe-head"><h2 id="set-h">Settings</h2><button class="btn tiny ghost" id="set-x">Close</button></div>
       <h3>Display</h3>
+      <div class="set-row"><label for="player">Player</label><select id="player"><option value="male">Male</option><option value="female" ${S.player === 'female' ? 'selected' : ''}>Female</option></select></div>
       <div class="set-row"><label for="style">Battle style</label><select id="style">${Object.entries(STYLES).map(([k, v]) => `<option value="${k}" ${S.style === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
       <h3>Sound</h3>
       <div class="set-row"><label for="mute">Mute everything</label><input type="checkbox" id="mute" ${S.music.muted ? 'checked' : ''}></div>
@@ -902,6 +906,7 @@
     $('#vol').oninput = (e) => { Music.setVol(+e.target.value); save(); };
     $('#sfx').onchange = (e) => { S.music.sfx = e.target.checked; save(); };
     $('#spd').onchange = (e) => { S.music.speed = e.target.value; save(); };
+    $('#player').onchange = (e) => { S.player = e.target.value; save(); if (G) $('#bt-mode').textContent = $('#bt-mode').textContent.replace(/\S+ vs /, protagFor(OPP) + ' vs '); };
     $('#style').onchange = (e) => { S.style = e.target.value; save(); if (G) $('.device').dataset.skin = skinFor(OPP); };
     M.querySelectorAll('select[data-k]').forEach((sel) => sel.onchange = () => { S.music.slots[sel.dataset.k] = sel.value; save(); if (currentMusicSlot() === sel.dataset.k) resume(); });
     M.querySelectorAll('[data-preview]').forEach((b) => b.onclick = () => { Music.unlock(); Music.preview(S.music.slots[b.dataset.preview]); });
