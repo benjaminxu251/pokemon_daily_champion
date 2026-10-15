@@ -25,7 +25,7 @@ Reference: [Daily Red Game](https://dailyredgame.org/), the project that inspire
   - the text box
   - the party and summary screens
 - Player character art, male and female, for the protagonist of each opponent's game: Lucas/Dawn (Cynthia), Brendan/May (Zinnia) and Florian/Juliana (Elite Four). It appears in the encounter intro facing the champion, and as the back view when sending out Pokémon. This uses original art under the same licensing requirement.
-- Champion encounter intro, like the games: a transition into the battle, the champion's entrance and intro line, then her lead Pokémon sent out. Each battle style gets its own version. This uses original art under the same licensing requirement.
+- Champion encounter intro, like the games: a transition into the battle, the champion's entrance and intro line, then their lead Pokémon sent out. Each battle style gets its own version. This uses original art under the same licensing requirement.
 
 ## Draft mode
 
@@ -56,7 +56,3 @@ Reference: [Daily Red Game](https://dailyredgame.org/), the project that inspire
 
 - More champions, each under their own generation's rules and UI skin.
 - More Elite Four members and Champions as new games add them.
-
-## Open questions
-
-- Streaks: should they count consecutive days played, or only consecutive wins?

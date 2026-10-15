@@ -111,6 +111,7 @@ Each trainer keeps their original type theme and their signature ace.
 
 **Records**
 - Runs cleared, runs failed, win streak and best streak.
+- The streak counts consecutive recorded wins. A loss resets it; a missed day doesn't.
 
 **Share text** looks like this:
 
@@ -263,12 +264,10 @@ Poppy · Olivia · Lacey · Lucian
 2. **Sprites and art.** Replace the stat glyphs with real Pokémon visuals. Open question: this needs art the project has the rights to use, either original pixel art or a properly licensed sprite source. Until then, improve the glyphs with per-type textures and idle animation.
 3. **Draft mode (idea).** Pick 1 of 3 Pokémon six times, using the same daily candidates for everyone.
 4. **Smarter AI.** Two-turn search with pruning, and a better evaluation of setup, hazards and speed control. Tune it against a benchmark suite (`tools/`).
-5. **Leaderboards and sharing.** Optional global stats per day: how many people cleared, the average turns, and which Elite Four member stops the most players.
-6. **More opponents.** Other champions, each in their own generation's rules.
+5. **Elite Four: Pokémon Champions-style Megas.** Mega Evolution for both the player and the Elite Four. Tera and Z-Moves stay off. See ROADMAP.md for the open questions.
+6. **Leaderboards and sharing.** Optional global stats per day: how many people cleared, the average turns, and which Elite Four member stops the most players.
+7. **More opponents.** Other champions, each in their own generation's rules.
 
 ## 12. Open questions
 
-- Should Zinnia get Aster (Whismur) as a sixth Pokémon, even though Aster never battles in the games?
-- Should Lance's Elite Four entry use a specific later-game team (for example from Pokémon Masters EX), rather than just keeping his Dragon type and Dragonite ace?
-- Should streaks count consecutive days played, or only consecutive wins?
 - Sprite licensing: what source, under what license, if any?
