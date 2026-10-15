@@ -230,8 +230,9 @@ Poppy · Olivia · Lacey · Lucian
 - Under each HP box, Showdown-style chips list non-zero stat stages, volatile effects (Confused, Substitute, Leech Seed, Taunt, Perish N...) and that side's conditions (Stealth Rock, Spikes ×2, Reflect, Tailwind...). They update when a turn's text finishes, so they never run ahead of the battle text.
 
 **Responsive**
-- Phones (portrait): the screens stack. The device is sized to fit the viewport height.
-- Desktop or landscape (≥820px wide and wider than 5:4): the screens sit side by side, the scene at about 60% width and the menu beside it.
+- One layout for every battle style, like a DS: the battle screen on top and the menu screen below, both 4:3 and the same width. Screens never sit side by side.
+- The console scales to fit the window height (up to 600px wide), so a battle fits without scrolling on desktop.
+- The YouTube "Now playing" box sits at the bottom right on wide windows (1120px+) and below the console otherwise.
 - Type sizes use container query units, so text scales with the screen.
 
 **About page**

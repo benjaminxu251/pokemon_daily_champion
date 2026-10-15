@@ -328,8 +328,11 @@ body[data-opp="zinnia"] .mon.is-lead, body[data-opp="zinnia"] .diff button[aria-
 .device[data-skin="gen3"] .ball.out { background: #9a9a90; }
 .device[data-skin="gen3"] #textbox { background: #384860; color: #f8f8f8; border: 3px solid #a8b8d0; border-radius: 4px; box-shadow: inset 0 0 0 2px #283448, 0 0 0 2px #202838; text-shadow: 1px 1px 0 #182030; }
 .device[data-skin="gen3"] #touch { background: #384860; padding: 8px; }
-.device[data-skin="gen3"] #touch:has(> .t-fight) { grid-template-columns: 1fr 1fr; align-content: center; background: #f8f8f8; border: 3px solid #707090; box-shadow: inset 0 0 0 2px #c8c8d8; gap: 4px 10px; padding: 14px 16px; }
-.device[data-skin="gen3"] #touch:has(> .t-fight) .t-row { display: contents; }
+.t-main { display: contents; }
+/* Gen 3 command box: a framed white box on the slate panel, FIGHT/BAG over POKéMON/RUN */
+.device[data-skin="gen3"] #touch:has(> .t-main) { place-items: center; }
+.device[data-skin="gen3"] .t-main { display: grid; grid-template-columns: 1fr 1fr; align-content: center; gap: 4px 10px; padding: 12px 14px; width: 88%; background: #f8f8f8; border: 4px solid #505070; border-radius: 10px; box-shadow: inset 0 0 0 3px #b8c8e8, 0 0 0 2px #202840; }
+.device[data-skin="gen3"] .t-main .t-row { display: contents; }
 .device[data-skin="gen3"] .t-fight, .device[data-skin="gen3"] .t-small, .device[data-skin="gen3"] .mv, .device[data-skin="gen3"] .t-back, .device[data-skin="gen3"] .t-go, .device[data-skin="gen3"] .t-mega {
   position: relative; background: #f8f8f8; color: #383838; text-shadow: 1px 1px 0 #d0d0c8; border: 0; border-radius: 0; box-shadow: none; margin: 0; filter: none;
   text-align: left; font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 6px 8px 6px 26px; display: grid; justify-items: start; }
@@ -341,7 +344,7 @@ body[data-opp="zinnia"] .mon.is-lead, body[data-opp="zinnia"] .diff button[aria-
 .device[data-skin="gen3"] :is(.t-fight, .t-small, .mv, .t-back, .t-go, .t-mega):is(:hover, :focus-visible)::before { opacity: 1; }
 .device[data-skin="gen3"] :is(.t-fight, .t-small, .mv, .t-back, .t-go, .t-mega):focus-visible { outline: none; }
 .device[data-skin="gen3"] .t-small:disabled { color: #b0b0a8; text-shadow: none; }
-.device[data-skin="gen3"] .moves { background: #f8f8f8; border: 3px solid #707090; box-shadow: inset 0 0 0 2px #c8c8d8; padding: 8px; gap: 2px 8px; }
+.device[data-skin="gen3"] .moves { background: #f8f8f8; border: 4px solid #505070; border-radius: 10px; box-shadow: inset 0 0 0 3px #b8c8e8, 0 0 0 2px #202840; padding: 8px; gap: 2px 8px; }
 .device[data-skin="gen3"] .mv { border-left: 5px solid var(--tc); padding-left: 24px; }
 .device[data-skin="gen3"] .mv::before { left: 9px; }
 .device[data-skin="gen3"] .mv-n { font-size: clamp(14px, 4.6cqw, 21px); }
@@ -349,7 +352,7 @@ body[data-opp="zinnia"] .mon.is-lead, body[data-opp="zinnia"] .diff button[aria-
 .device[data-skin="gen3"] .mv-t { justify-self: stretch; gap: 8px; }
 .device[data-skin="gen3"] .mv-t i { font-style: normal; }
 .device[data-skin="gen3"] .mv:disabled { color: #b0b0a8; }
-.device[data-skin="gen3"] .t-pair { background: #f8f8f8; border: 3px solid #707090; padding: 2px; }
+.device[data-skin="gen3"] .t-pair { background: #f8f8f8; border: 4px solid #505070; border-radius: 10px; box-shadow: inset 0 0 0 3px #b8c8e8, 0 0 0 2px #202840; padding: 2px; }
 .device[data-skin="gen3"] .t-mega.on { color: #c03070; }
 .device[data-skin="gen3"] .t-mega.on::before { opacity: 1; content: "★"; color: #c03070; }
 .device[data-skin="gen3"] .t-go.warn { color: #c03030; }
@@ -422,7 +425,7 @@ body[data-opp="e4"] .mon.is-lead { border-color: var(--e4); }
 .about-body a { color: var(--gold); }
 .about-body ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 
-/* ---------- responsive battle: scale with the screen, side by side when wide ---------- */
+/* ---------- responsive battle: one layout for every style: battle screen above, menu screen below, both 4:3, sized to fit the window ---------- */
 .screen { container-type: inline-size; }
 #textbox { font-size: clamp(12px, 5.6cqw, 26px); }
 .hpbox .bx-top { font-size: clamp(10px, 4.6cqw, 20px); }
@@ -431,18 +434,10 @@ body[data-opp="e4"] .mon.is-lead { border-color: var(--e4); }
 .t-small span, .t-back, .t-go, .t-mega { font-size: clamp(13px, 4.6cqw, 20px); }
 .mv-n { font-size: clamp(13px, 5cqw, 22px); }
 .mv-pp, .pm-n { font-size: clamp(11px, 3.6cqw, 16px); }
-.device { max-width: min(440px, max(300px, calc((100svh - 150px) / 1.55))); }
-@media (min-width: 820px) and (min-aspect-ratio: 5/4) {
-  #battle { padding-block: 16px 0; }
-  .device { max-width: min(1180px, calc((100svh - 130px) * 1.75)); grid-template-columns: 1.45fr 1fr; grid-template-rows: auto auto; align-items: start; column-gap: 18px; row-gap: 10px; padding: 18px; }
-  .device #scene { grid-column: 1; grid-row: 1; }
-  .device #touch { grid-column: 2; grid-row: 1; align-self: stretch; height: auto; min-height: 0; aspect-ratio: auto; overflow: hidden; grid-template-rows: 1fr auto; }
-  .device #touch > .moves, .device #touch > .party { grid-auto-rows: 1fr; min-height: 0; }
-  .device .bt-bar { grid-column: 1 / -1; grid-row: 2; margin: 0; }
-  .moves { gap: 10px; } .party { gap: 8px; }
-  .device #touch:has(> .t-fight) { grid-template-rows: minmax(0, 1fr) auto; }
-  .device #touch > .t-fight { align-self: center; height: min(100%, 11rem); }
-}
+.device { max-width: min(600px, max(300px, calc((100svh - 170px) / 1.5))); }
+#touch { overflow: hidden; }
+#touch > .moves, #touch > .party { grid-auto-rows: minmax(0, 1fr); min-height: 0; }
+#touch:has(> .moves), #touch:has(> .party) { grid-template-rows: minmax(0, 1fr) auto; }
 
 .foot { max-width: 960px; margin: 24px auto 0; font-size: 12px; color: var(--muted); }
 
@@ -590,3 +585,4 @@ img.trsp { image-rendering: pixelated; object-fit: contain; }
 #music-dock .md-info { display: grid; gap: 4px; min-width: 0; font-size: 13px; }
 #music-dock .md-info small { color: var(--muted); font-family: var(--display); letter-spacing: .08em; text-transform: uppercase; font-size: 10px; }
 #music-dock .md-info .btn { justify-self: start; }
+@media (min-width: 1120px) { #music-dock { position: fixed; right: 16px; bottom: 16px; margin: 0; z-index: 15; flex-direction: column; align-items: stretch; width: 216px; } }

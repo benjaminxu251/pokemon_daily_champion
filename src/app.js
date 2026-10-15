@@ -735,13 +735,13 @@
     renderMain();
   }
   function renderMain() {
-    $('#touch').innerHTML = `
+    $('#touch').innerHTML = `<div class="t-main">
       <button class="t-fight" id="t-fight"><span>Fight</span></button>
       <div class="t-row">
         <button class="t-small t-bag" disabled title="No items in this challenge"><span>Bag</span><small>None</small></button>
         <button class="t-small t-run" id="t-run"><span>Run</span><small>Forfeit</small></button>
         <button class="t-small t-mon" id="t-mon"><span>Pokémon</span><small>${G.b.p1.pokemon.filter((p) => !p.fainted).length}/6</small></button>
-      </div>`;
+      </div></div>`;
     $('#t-fight').onclick = () => { Music.blip(); renderFight(); };
     $('#t-mon').onclick = () => { Music.blip(); renderParty(false); };
     $('#t-run').onclick = () => { Music.blip(); renderRun(); };
